@@ -1,17 +1,9 @@
 <template>
   <div class="map-page-container">
-    <!-- 1. 상단 네비게이션 바 -->
-    <header class="navigation-bar">
-      <div class="logo">LocalHub</div>
-      <div class="nav-buttons">
-        <router-link to="/community" class="nav-link">커뮤니티</router-link>
-      </div>
-    </header>
+    <Header />
 
-    <!-- 2. 상단 검색 및 필터바 영역 (레이아웃 개선) -->
     <section class="search-filter-section">
       <div class="filter-wrapper">
-        <!-- [개선] 검색창을 윗줄에 단독으로 넓게 배치하여 겹침 방지 -->
         <div class="search-row">
           <div class="search-input-box">
             <input 
@@ -24,7 +16,6 @@
           </div>
         </div>
 
-        <!-- [개선] 카테고리 및 지역 선택 드롭다운만 아래쪽에 깔끔하게 배치 -->
         <div class="select-row">
           <select v-model="currentCategory" @change="handleCategoryChange" class="filter-select">
             <option value="all">전체 카테고리</option>
@@ -43,12 +34,10 @@
       </div>
     </section>
 
-    <!-- 3. 지도 영역 -->
     <main class="map-section">
       <div id="map" class="kakao-map"></div>
     </main>
 
-    <!-- 4. 하단 검색 결과 리스트 영역 -->
     <section class="list-section">
       <div class="list-header">
         <h3>검색 결과 <span class="count-text">({{ filteredList.length }})</span></h3>
@@ -61,12 +50,10 @@
           class="horizontal-card"
           @click="focusOnMap(f)"
         >
-          <!-- 카드 왼쪽 이미지 -->
           <div class="card-img-area">
             <img :src="f.firstimage || 'https://via.placeholder.com/150?text=No+Image'" alt="장소 이미지" />
           </div>
 
-          <!-- 카드 오른쪽 정보 -->
           <div class="card-info-area">
             <div class="card-title-row">
               <h4 class="card-title">{{ f.title || '제목 없음' }}</h4>
@@ -78,13 +65,11 @@
             <p class="card-desc">{{ f.tel ? '📞 ' + f.tel : '상세 정보는 마커를 호버하여 확인하세요.' }}</p>
           </div>
 
-          <!-- 오른쪽 메타 정보 (거리만 표시, 하트 제거) -->
           <div class="card-meta-area">
             <span class="distance-text">1.2km</span>
           </div>
         </div>
 
-        <!-- 더 보기 버튼 -->
         <div class="more-btn-wrap">
           <button class="more-btn">더 많은 장소 보기</button>
         </div>
@@ -98,14 +83,14 @@
 </template>
 
 <script setup>
-import { onMounted, ref, computed } from 'vue';
+import { onMounted, ref, computed } from 'vue'
+import Header from '../components/Header.vue'
 
-// JSON 데이터 임포트
-import tourData from '../data/서울_관광지.json';
-import leportsData from '../data/서울_레포츠.json';
-import cultureData from '../data/서울_문화시설.json';
-import shoppingData from '../data/서울_쇼핑.json';
-import accommodationData from '../data/서울_숙박.json';
+import tourData from '../data/서울_관광지.json'
+import leportsData from '../data/서울_레포츠.json'
+import cultureData from '../data/서울_문화시설.json'
+import shoppingData from '../data/서울_쇼핑.json'
+import accommodationData from '../data/서울_숙박.json'
 
 const categoryTabs = [
   { id: 'tour', name: '관광지', data: tourData },
@@ -113,123 +98,113 @@ const categoryTabs = [
   { id: 'culture', name: '문화시설', data: cultureData },
   { id: 'shopping', name: '쇼핑', data: shoppingData },
   { id: 'accommodation', name: '숙박', data: accommodationData }
-];
+]
 
-// 상태 변수들
-const currentCategory = ref('all'); 
-const selectedDistrict = ref('all'); 
-const searchQuery = ref(''); 
+const currentCategory = ref('all')
+const selectedDistrict = ref('all')
+const searchQuery = ref('')
 
 const districts = [
   '강남구', '강동구', '강북구', '강서구', '관악구', '광진구', '구로구', '금천구',
   '노원구', '도봉구', '동대문구', '동작구', '마포구', '서대문구', '서초구', '성동구',
   '성북구', '송파구', '양천구', '영등포구', '용산구', '은평구', '종로구', '중구', '중랑구'
-];
+]
 
-let mapInstance = null;
-const markers = ref([]);
-const overlays = {};
+let mapInstance = null
+const markers = ref([])
+const overlays = {}
 
-// 주소에서 자치구 추출 헬퍼 함수
 const getDistrictName = (address) => {
-  if (!address) return '서울';
-  const parts = address.split(' ');
-  return parts[1] && parts[1].endsWith('구') ? parts[1] : '서울';
-};
+  if (!address) return '서울'
+  const parts = address.split(' ')
+  return parts[1] && parts[1].endsWith('구') ? parts[1] : '서울'
+}
 
-// 아이템이 속한 카테고리명 찾기 (전체 검색 시 대응)
 const getCategoryNameOfItem = (item) => {
-  if (tourData.items?.some(i => i.contentid === item.contentid)) return '관광지';
-  if (leportsData.items?.some(i => i.contentid === item.contentid)) return '레포츠';
-  if (cultureData.items?.some(i => i.contentid === item.contentid)) return '문화시설';
-  if (shoppingData.items?.some(i => i.contentid === item.contentid)) return '쇼핑';
-  if (accommodationData.items?.some(i => i.contentid === item.contentid)) return '숙박';
-  return '장소';
-};
+  if (tourData.items?.some(i => i.contentid === item.contentid)) return '관광지'
+  if (leportsData.items?.some(i => i.contentid === item.contentid)) return '레포츠'
+  if (cultureData.items?.some(i => i.contentid === item.contentid)) return '문화시설'
+  if (shoppingData.items?.some(i => i.contentid === item.contentid)) return '쇼핑'
+  if (accommodationData.items?.some(i => i.contentid === item.contentid)) return '숙박'
+  return '장소'
+}
 
-// 뱃지 색상 클래스 매칭
 const getCategoryClass = (item) => {
-  if (tourData.items?.some(i => i.contentid === item.contentid)) return 'tour-tag';
-  if (leportsData.items?.some(i => i.contentid === item.contentid)) return 'leports-tag';
-  if (cultureData.items?.some(i => i.contentid === item.contentid)) return 'culture-tag';
-  if (shoppingData.items?.some(i => i.contentid === item.contentid)) return 'shopping-tag';
-  if (accommodationData.items?.some(i => i.contentid === item.contentid)) return 'accommodation-tag';
-  return 'default-tag';
-};
+  if (tourData.items?.some(i => i.contentid === item.contentid)) return 'tour-tag'
+  if (leportsData.items?.some(i => i.contentid === item.contentid)) return 'leports-tag'
+  if (cultureData.items?.some(i => i.contentid === item.contentid)) return 'culture-tag'
+  if (shoppingData.items?.some(i => i.contentid === item.contentid)) return 'shopping-tag'
+  if (accommodationData.items?.some(i => i.contentid === item.contentid)) return 'accommodation-tag'
+  return 'default-tag'
+}
 
-// 모든 카테고리 데이터를 하나로 합치거나 개별 필터링해서 원본 배열 생성
 const rawList = computed(() => {
   if (currentCategory.value !== 'all') {
-    const activeTab = categoryTabs.find(tab => tab.id === currentCategory.value);
-    return activeTab && activeTab.data && activeTab.data.items ? activeTab.data.items : [];
+    const activeTab = categoryTabs.find(tab => tab.id === currentCategory.value)
+    return activeTab && activeTab.data && activeTab.data.items ? activeTab.data.items : []
   } else {
-    let combined = [];
+    let combined = []
     categoryTabs.forEach(tab => {
       if (tab.data && tab.data.items) {
-        combined = [...combined, ...tab.data.items];
+        combined = [...combined, ...tab.data.items]
       }
-    });
-    return combined;
+    })
+    return combined
   }
-});
+})
 
-// 자치구, 검색어 필터링이 적용된 최종 리스트
 const filteredList = computed(() => {
-  let list = [...rawList.value];
+  let list = [...rawList.value]
 
-  // 1. 자치구 필터 적용
   if (selectedDistrict.value !== 'all') {
-    list = list.filter(item => getDistrictName(item.addr1) === selectedDistrict.value);
+    list = list.filter(item => getDistrictName(item.addr1) === selectedDistrict.value)
   }
 
-  // 2. 키워드 검색어 필터 적용
   if (searchQuery.value.trim() !== '') {
-    const query = searchQuery.value.toLowerCase();
-    list = list.filter(item => 
+    const query = searchQuery.value.toLowerCase()
+    list = list.filter(item =>
       (item.title && item.title.toLowerCase().includes(query)) ||
       (item.addr1 && item.addr1.toLowerCase().includes(query))
-    );
+    )
   }
 
-  return list;
-});
+  return list
+})
 
-// 카카오 맵 초기화
 const initMap = () => {
-  const container = document.getElementById('map');
-  if (!container) return;
+  const container = document.getElementById('map')
+  if (!container) return
 
   const options = {
     center: new kakao.maps.LatLng(37.5665, 126.9780),
     level: 7
-  };
-  mapInstance = new kakao.maps.Map(container, options);
+  }
+  mapInstance = new kakao.maps.Map(container, options)
 
-  updateMarkers();
-};
+  updateMarkers()
+}
 
-// 마커 업데이트 함수
 const updateMarkers = () => {
-  markers.value.forEach(marker => marker.setMap(null));
-  markers.value = [];
-  
-  Object.values(overlays).forEach(o => o.setMap(null));
+  markers.value.forEach(marker => marker.setMap(null))
+  markers.value = []
+
+  Object.values(overlays).forEach(o => o.setMap(null))
   for (const key in overlays) {
-    delete overlays[key];
+    delete overlays[key]
   }
 
   filteredList.value.forEach(f => {
-    const lat = Number(f.mapy);
-    const lng = Number(f.mapx);
+    const lat = Number(f.mapy)
+    const lng = Number(f.mapx)
 
     if (f.mapy && f.mapx && !isNaN(lat) && !isNaN(lng)) {
-      const position = new kakao.maps.LatLng(lat, lng);
-      
+      const position = new kakao.maps.LatLng(lat, lng)
+
       const marker = new kakao.maps.Marker({
-        position: position
-      });
-      marker.setMap(mapInstance);
-      markers.value.push(marker);
+        position
+      })
+      marker.setMap(mapInstance)
+      markers.value.push(marker)
 
       const content = `
         <div class="map-overlay-card">
@@ -237,78 +212,77 @@ const updateMarkers = () => {
           <h4 class="overlay-title">${f.title || '제목 없음'}</h4>
           <p class="overlay-addr">${f.addr1 || ''}</p>
         </div>
-      `;
+      `
 
       const overlay = new kakao.maps.CustomOverlay({
-        content: content,
-        position: position,
+        content,
+        position,
         yAnchor: 1.25,
         clickable: false
-      });
+      })
 
-      overlays[f.contentid] = overlay;
+      overlays[f.contentid] = overlay
 
       kakao.maps.event.addListener(marker, 'mouseover', () => {
-        overlay.setMap(mapInstance);
-      });
+        overlay.setMap(mapInstance)
+      })
 
       kakao.maps.event.addListener(marker, 'mouseout', () => {
-        overlay.setMap(null);
-      });
+        overlay.setMap(null)
+      })
     }
-  });
+  })
 
   if (filteredList.value.length > 0 && selectedDistrict.value !== 'all') {
-    const firstItem = filteredList.value[0];
-    const newCenter = new kakao.maps.LatLng(Number(firstItem.mapy), Number(firstItem.mapx));
-    mapInstance.panTo(newCenter);
-    mapInstance.setLevel(6); 
+    const firstItem = filteredList.value[0]
+    const newCenter = new kakao.maps.LatLng(Number(firstItem.mapy), Number(firstItem.mapx))
+    mapInstance.panTo(newCenter)
+    mapInstance.setLevel(6)
   } else if (selectedDistrict.value === 'all' && mapInstance) {
-    mapInstance.panTo(new kakao.maps.LatLng(37.5665, 126.9780));
-    mapInstance.setLevel(7);
+    mapInstance.panTo(new kakao.maps.LatLng(37.5665, 126.9780))
+    mapInstance.setLevel(7)
   }
-};
+}
 
-const handleCategoryChange = () => { updateMarkers(); };
-const handleDistrictChange = () => { updateMarkers(); };
-const handleSearch = () => { updateMarkers(); };
+const handleCategoryChange = () => { updateMarkers() }
+const handleDistrictChange = () => { updateMarkers() }
+const handleSearch = () => { updateMarkers() }
 
 const focusOnMap = (festival) => {
-  const lat = Number(festival.mapy);
-  const lng = Number(festival.mapx);
+  const lat = Number(festival.mapy)
+  const lng = Number(festival.mapx)
 
   if (mapInstance && !isNaN(lat) && !isNaN(lng)) {
-    const moveLatLon = new kakao.maps.LatLng(lat, lng);
-    mapInstance.panTo(moveLatLon);
-    mapInstance.setLevel(5);
+    const moveLatLon = new kakao.maps.LatLng(lat, lng)
+    mapInstance.panTo(moveLatLon)
+    mapInstance.setLevel(5)
 
-    Object.values(overlays).forEach(o => o.setMap(null));
+    Object.values(overlays).forEach(o => o.setMap(null))
     if (overlays[festival.contentid]) {
-      overlays[festival.contentid].setMap(mapInstance);
+      overlays[festival.contentid].setMap(mapInstance)
       setTimeout(() => {
         if (overlays[festival.contentid]) {
-          overlays[festival.contentid].setMap(null);
+          overlays[festival.contentid].setMap(null)
         }
-      }, 3000);
+      }, 3000)
     }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
-};
+}
 
 onMounted(() => {
   if (window.kakao && window.kakao.maps) {
-    kakao.maps.load(initMap);
+    kakao.maps.load(initMap)
   } else {
-    const script = document.createElement('script');
-    script.src = "//dapi.kakao.com/v2/maps/sdk.js?autoload=false&appkey=72df5c0dbacc0b09d71beb2294c1a9e8";
-    script.onload = () => kakao.maps.load(initMap);
-    document.head.appendChild(script);
+    const script = document.createElement('script')
+    script.src = '//dapi.kakao.com/v2/maps/sdk.js?autoload=false&appkey=72df5c0dbacc0b09d71beb2294c1a9e8'
+    script.onload = () => kakao.maps.load(initMap)
+    document.head.appendChild(script)
   }
-});
+})
 </script>
 
 <style scoped>
-/* 전체 레이아웃 */
 .map-page-container {
   font-family: 'Pretendard', -apple-system, sans-serif;
   color: #333;
@@ -316,36 +290,6 @@ onMounted(() => {
   min-height: 100vh;
 }
 
-/* 1. 네비게이션 바 */
-.navigation-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px 10%;
-  background: #ffffff;
-  border-bottom: 1px solid #f0f0f0;
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-}
-.logo {
-  font-size: 24px;
-  font-weight: 800;
-  color: #ff5a22; 
-  letter-spacing: -0.5px;
-}
-.nav-link {
-  text-decoration: none;
-  font-size: 15px;
-  font-weight: 600;
-  color: #333;
-  transition: color 0.2s;
-}
-.nav-link:hover {
-  color: #ff5a22;
-}
-
-/* 2. 상단 검색 및 필터바 영역 (세로 배치 레이아웃 개선) */
 .search-filter-section {
   background: #ffffff;
   padding: 16px 10%;
@@ -353,20 +297,24 @@ onMounted(() => {
   display: flex;
   justify-content: center;
 }
+
 .filter-wrapper {
   display: flex;
-  flex-direction: column; /* 세로로 배치되도록 설정 */
+  flex-direction: column;
   gap: 12px;
   width: 100%;
-  max-width: 800px; /* 필터 폭 한정 */
+  max-width: 800px;
 }
+
 .search-row {
   width: 100%;
 }
+
 .search-input-box {
   position: relative;
   width: 100%;
 }
+
 .search-input-box input {
   width: 100%;
   padding: 12px 45px 12px 18px;
@@ -377,10 +325,12 @@ onMounted(() => {
   outline: none;
   transition: all 0.2s;
 }
+
 .search-input-box input:focus {
   border-color: #ff5a22;
   background-color: #fff;
 }
+
 .search-btn {
   position: absolute;
   right: 15px;
@@ -392,12 +342,12 @@ onMounted(() => {
   font-size: 16px;
 }
 
-/* 필터 드롭다운 가로 배치 */
 .select-row {
   display: flex;
   gap: 10px;
   width: 100%;
 }
+
 .filter-select {
   flex: 1;
   padding: 10px 14px;
@@ -410,44 +360,47 @@ onMounted(() => {
   cursor: pointer;
   outline: none;
 }
+
 .filter-select:focus {
   border-color: #ff5a22;
 }
 
-/* 3. 지도 영역 */
 .map-section {
   width: 100%;
 }
+
 .kakao-map {
   width: 100%;
   height: 50vh;
 }
 
-/* 4. 하단 검색 결과 리스트 영역 */
 .list-section {
-  max-width: 800px; 
+  max-width: 800px;
   margin: 30px auto;
   padding: 0 20px;
 }
+
 .list-header {
   margin-bottom: 16px;
 }
+
 .list-header h3 {
   font-size: 18px;
   font-weight: 700;
   color: #1a1a1a;
 }
+
 .count-text {
   color: #888888;
   font-weight: 400;
 }
 
-/* 가로형 카드 리스트 */
 .horizontal-card-list {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
+
 .horizontal-card {
   display: flex;
   background: #ffffff;
@@ -458,12 +411,12 @@ onMounted(() => {
   transition: transform 0.2s, box-shadow 0.2s;
   position: relative;
 }
+
 .horizontal-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
 }
 
-/* 카드 이미지 */
 .card-img-area {
   width: 100px;
   height: 100px;
@@ -472,13 +425,13 @@ onMounted(() => {
   background: #f5f5f5;
   flex-shrink: 0;
 }
+
 .card-img-area img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-/* 카드 정보 텍스트 */
 .card-info-area {
   margin-left: 20px;
   flex-grow: 1;
@@ -486,12 +439,14 @@ onMounted(() => {
   flex-direction: column;
   justify-content: center;
 }
+
 .card-title-row {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-bottom: 6px;
 }
+
 .card-title {
   font-size: 17px;
   font-weight: 700;
@@ -499,13 +454,13 @@ onMounted(() => {
   margin: 0;
 }
 
-/* 카테고리별 컬러 뱃지 */
 .category-badge {
   font-size: 11px;
   font-weight: 700;
   padding: 2px 8px;
   border-radius: 4px;
 }
+
 .tour-tag { background: #ffebeb; color: #ff5a22; }
 .leports-tag { background: #eef3ff; color: #3182ce; }
 .culture-tag { background: #f0fff4; color: #38a169; }
@@ -518,13 +473,13 @@ onMounted(() => {
   color: #666;
   margin: 0 0 6px 0;
 }
+
 .card-desc {
   font-size: 12px;
   color: #999;
   margin: 0;
 }
 
-/* 오른쪽 메타 정보 (하트 제거하고 거리 정보만 수직 중앙 정렬) */
 .card-meta-area {
   display: flex;
   align-items: center;
@@ -532,18 +487,19 @@ onMounted(() => {
   width: 60px;
   flex-shrink: 0;
 }
+
 .distance-text {
   font-size: 13.5px;
   color: #888;
   font-weight: 600;
 }
 
-/* 더 많은 장소 보기 버튼 */
 .more-btn-wrap {
   display: flex;
   justify-content: center;
   margin-top: 15px;
 }
+
 .more-btn {
   width: 100%;
   padding: 14px;
@@ -556,6 +512,7 @@ onMounted(() => {
   cursor: pointer;
   transition: all 0.2s;
 }
+
 .more-btn:hover {
   background: #ff5a22;
   color: white;
@@ -568,7 +525,6 @@ onMounted(() => {
   color: #888888;
 }
 
-/* 지도 위 호버 오버레이 */
 :deep(.map-overlay-card) {
   padding: 10px;
   background: white;
@@ -578,6 +534,7 @@ onMounted(() => {
   box-shadow: 0 10px 25px rgba(0,0,0,0.12);
   pointer-events: none;
 }
+
 :deep(.overlay-img) {
   width: 100%;
   height: 105px;
@@ -585,14 +542,17 @@ onMounted(() => {
   border-radius: 6px;
   margin-bottom: 8px;
 }
+
 :deep(.overlay-title) {
   font-size: 13.5px;
   font-weight: 700;
   margin: 0 0 4px 0;
 }
+
 :deep(.overlay-addr) {
   font-size: 11px;
   color: #718096;
   margin: 0;
 }
 </style>
+```

@@ -8,9 +8,9 @@
     <!-- Hero -->
 
     <section class="hero">
-
-      <div class="hero-content">
-
+    <div class="hero-content">
+      <div class="brand-title">
+      </div>
 
         <h1>
           어디로 떠나볼까요?
