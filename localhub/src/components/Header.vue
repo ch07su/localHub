@@ -13,8 +13,8 @@
         지도
       </RouterLink>
 
-      <RouterLink to="/recommend">
-        캘린더
+      <RouterLink to="/route">
+        일정짜기
       </RouterLink>
     </nav>
 
