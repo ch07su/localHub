@@ -23,11 +23,25 @@
         />
 
         <div class="filter-group">
+          <select v-model="selectedRegion">
+            <option value="전체">지역 선택</option>
+            <option v-for="region in regionOptions" :key="region" :value="region">
+              {{ region }}
+            </option>
+          </select>
+
           <select v-model="selectedCategory">
-            <option value="전체">전체 카테고리</option>
-            <option value="맛집">맛집</option>
-            <option value="관광">관광</option>
+            <option value="주제">주제 선택</option>
+            <option value="관광지">관광지</option>
+            <option value="레포츠">레포츠</option>
+            <option value="문화시설">문화시설</option>
+            <option value="쇼핑">쇼핑</option>
+            <option value="여행코스">여행코스</option>
+            <option value="숙박">숙박</option>
             <option value="축제">축제</option>
+            <option value="공연">공연</option>
+            <option value="행사">행사</option>
+            <option value="맛집">맛집</option>
           </select>
 
           <button
@@ -52,18 +66,34 @@
 
         <div class="form-row">
           <input v-model="form.password" type="password" placeholder="비밀번호" />
-          <select v-model="form.category">
-            <option value="맛집">맛집</option>
-            <option value="관광">관광</option>
-            <option value="축제">축제</option>
+          <select v-model="form.region">
+            <option value="">지역 선택</option>
+            <option v-for="region in regionOptions" :key="region" :value="region">
+              {{ region }}
+            </option>
           </select>
         </div>
 
-        <input
-          v-model="form.tagInput"
-          class="tag-input"
-          placeholder="태그를 쉼표로 입력하세요. 예: 서울, 밤산책"
-        />
+        <div class="form-row">
+          <select v-model="form.category">
+            <option value="관광지">관광지</option>
+            <option value="레포츠">레포츠</option>
+            <option value="문화시설">문화시설</option>
+            <option value="쇼핑">쇼핑</option>
+            <option value="여행코스">여행코스</option>
+            <option value="숙박">숙박</option>
+            <option value="축제">축제</option>
+            <option value="공연">공연</option>
+            <option value="행사">행사</option>
+            <option value="맛집">맛집</option>
+          </select>
+
+          <input
+            v-model="form.tagInput"
+            class="tag-input"
+            placeholder="태그를 쉼표로 입력하세요. 예: 서울, 밤산책"
+          />
+        </div>
 
         <textarea v-model="form.content" rows="6" placeholder="내용을 입력하세요."></textarea>
 
@@ -90,6 +120,7 @@
           >
             <div class="post-meta">
               <span class="category-badge">{{ post.category }}</span>
+              <span class="region-badge">{{ post.region || '미지정' }}</span>
               <span>{{ post.createdAt }}</span>
             </div>
 
@@ -132,9 +163,9 @@
             </div>
 
             <div class="detail-meta">
-              <span>{{ selectedPost.writer }}</span>
+              <span>{{ selectedPost.region }}</span>
+              <span>{{ selectedPost.category }}</span>
               <span>{{ selectedPost.createdAt }}</span>
-              <span>조회 {{ selectedPost.views }}</span>
             </div>
 
             <div class="tag-list">
@@ -168,17 +199,27 @@
             </div>
 
             <div class="comment-section">
-              <h3>댓글</h3>
+              <div class="comment-card">
+                <div class="comment-header">
+                  <div>
+                    <p class="comment-eyebrow">소통하기</p>
+                    <h3>댓글 남기기</h3>
+                  </div>
+                  <span class="comment-count">{{ selectedPost.comments.length }}개</span>
+                </div>
+
+                <div class="comment-form">
+                  <div class="comment-input-row">
+                    <input v-model="commentWriter" placeholder="닉네임" />
+                    <button class="submit-btn" @click="addComment">댓글 등록</button>
+                  </div>
+                  <textarea v-model="commentText" rows="3" placeholder="여러분의 의견을 남겨주세요."></textarea>
+                </div>
+              </div>
 
               <div v-for="comment in selectedPost.comments" :key="comment.id" class="comment-item">
                 <strong>{{ comment.writer }}</strong>
                 <p>{{ comment.text }}</p>
-              </div>
-
-              <div class="comment-form">
-                <input v-model="commentWriter" placeholder="댓글 작성자" />
-                <textarea v-model="commentText" rows="3" placeholder="댓글을 입력하세요."></textarea>
-                <button class="submit-btn" @click="addComment">댓글 등록</button>
               </div>
             </div>
           </div>
@@ -204,12 +245,19 @@ const STORAGE_KEY = 'localhub-posts'
 const FAVORITES_KEY = 'localhub-favorites'
 const router = useRouter()
 
+const regionOptions = [
+  '종로구', '중구', '용산구', '성동구', '광진구', '동대문구', '중랑구', '성북구', '강북구', '도봉구',
+  '노원구', '은평구', '서대문구', '마포구', '양천구', '강서구', '구로구', '금천구', '영등포구', '동작구',
+  '관악구', '서초구', '강남구', '송파구', '강동구'
+]
+
 const defaultPosts = [
   {
     id: 1,
     title: '성수동 맛집 추천합니다.',
     writer: '익명',
     password: '1234',
+    region: '성동구',
     category: '맛집',
     content: '성수동에서 가볼 만한 맛집을 소개합니다.',
     createdAt: '2026-07-14',
@@ -225,7 +273,8 @@ const defaultPosts = [
     title: '한강 피크닉 장소 추천',
     writer: '홍길동',
     password: '1111',
-    category: '관광',
+    region: '영등포구',
+    category: '관광지',
     content: '여의도 한강공원에서 피크닉하기 좋아요.',
     createdAt: '2026-07-13',
     views: 8,
@@ -240,6 +289,7 @@ const defaultPosts = [
     title: '이번 주 축제 일정',
     writer: '김철수',
     password: '2222',
+    region: '강남구',
     category: '축제',
     content: '이번 주 진행되는 지역 축제 정보를 정리했습니다.',
     createdAt: '2026-07-12',
@@ -255,7 +305,8 @@ const defaultPosts = [
 const posts = ref([])
 const favorites = ref([])
 const searchQuery = ref('')
-const selectedCategory = ref('전체')
+const selectedRegion = ref('전체')
+const selectedCategory = ref('주제')
 const selectedTag = ref('전체')
 const showForm = ref(false)
 const isEditing = ref(false)
@@ -265,6 +316,7 @@ const form = ref({
   title: '',
   writer: '',
   password: '',
+  region: '',
   category: '맛집',
   content: '',
   image: '',
@@ -286,8 +338,11 @@ const filteredPosts = computed(() => {
   const query = searchQuery.value.trim().toLowerCase()
 
   return posts.value.filter((post) => {
+    const matchRegion =
+      selectedRegion.value === '전체' || post.region === selectedRegion.value
+
     const matchCategory =
-      selectedCategory.value === '전체' || post.category === selectedCategory.value
+      selectedCategory.value === '주제' || post.category === selectedCategory.value
 
     const matchTag =
       selectedTag.value === '전체' || (post.tags || []).includes(selectedTag.value)
@@ -299,7 +354,7 @@ const filteredPosts = computed(() => {
       post.content.toLowerCase().includes(query) ||
       (post.tags || []).join(' ').toLowerCase().includes(query)
 
-    return matchCategory && matchTag && matchQuery
+    return matchRegion && matchCategory && matchTag && matchQuery
   })
 })
 
@@ -323,6 +378,8 @@ function loadPosts() {
       if (Array.isArray(parsed) && parsed.length > 0) {
         posts.value = parsed.map((post) => ({
           ...post,
+          region: post.region || '성동구',
+          category: post.category || '맛집',
           likes: post.likes || 0,
           likedByMe: post.likedByMe || false,
           tags: post.tags || [],
@@ -362,6 +419,7 @@ function resetForm() {
     title: '',
     writer: '',
     password: '',
+    region: '',
     category: '맛집',
     content: '',
     image: '',
@@ -380,7 +438,8 @@ function startEdit(post) {
     title: post.title,
     writer: post.writer,
     password: '',
-    category: post.category,
+    region: post.region || '',
+    category: post.category || '맛집',
     content: post.content,
     image: post.image || '',
     tagInput: (post.tags || []).join(', ')
@@ -429,6 +488,7 @@ function submitPost() {
             ...post,
             title: form.value.title,
             writer: form.value.writer,
+            region: form.value.region,
             category: form.value.category,
             content: form.value.content,
             tags,
@@ -442,6 +502,7 @@ function submitPost() {
       title: form.value.title,
       writer: form.value.writer,
       password: form.value.password,
+      region: form.value.region,
       category: form.value.category,
       content: form.value.content,
       createdAt: new Date().toISOString().slice(0, 10),
@@ -762,6 +823,7 @@ watch(posts, savePosts, { deep: true })
   font-size: 13px;
   color: #777;
   margin-bottom: 8px;
+  flex-wrap: wrap;
 }
 
 .tag-list {
@@ -780,13 +842,22 @@ watch(posts, savePosts, { deep: true })
   font-weight: bold;
 }
 
-.category-badge {
-  background: #f3f4f6;
-  color: #374151;
+.category-badge,
+.region-badge {
   padding: 4px 8px;
   border-radius: 999px;
   font-size: 12px;
   font-weight: bold;
+}
+
+.category-badge {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.region-badge {
+  background: #fef3c7;
+  color: #92400e;
 }
 
 .post-card h3 {
@@ -854,25 +925,131 @@ watch(posts, savePosts, { deep: true })
   border-top: 1px solid #eee;
 }
 
-.comment-item {
-  background: #f9fafb;
-  padding: 10px;
-  border-radius: 10px;
+.comment-card {
+  background: linear-gradient(135deg, #f8fffb 0%, #f6fbff 100%);
+  border: 1px solid #e3f5ea;
+  border-radius: 16px;
+  padding: 14px;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+  margin-bottom: 12px;
+}
+
+.comment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 10px;
+}
+
+.comment-eyebrow {
+  color: #42b883;
+  font-size: 12px;
+  font-weight: 700;
+  margin: 0 0 2px;
+}
+
+.comment-header h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.comment-count {
+  background: #ecfdf3;
+  color: #2f8f63;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .comment-form {
   display: flex;
   flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.comment-input-row {
+  display: flex;
   gap: 8px;
+  width: 100%;
+}
+
+.comment-input-row input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid #dcefe4;
+  border-radius: 999px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.comment-form textarea {
+  width: 100%;
+  max-width: 330px;
+  resize: vertical;
+  min-height: 88px;
+  border: 1px solid #dcefe4;
+  border-radius: 16px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.comment-form .submit-btn {
+  flex-shrink: 0;
+  align-self: flex-end;
+  border-radius: 999px;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, #42b883, #2f8f63);
+  color: white;
+  box-shadow: 0 6px 14px rgba(66, 184, 131, 0.2);
+}
+
+.comment-input-row input:focus,
+.comment-form textarea:focus {
+  border-color: #42b883;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(66, 184, 131, 0.16);
+}
+
+.comment-form textarea {
+  resize: vertical;
+  min-height: 88px;
+}
+
+.comment-form .submit-btn {
+  align-self: flex-end;
+  border-radius: 999px;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, #42b883, #2f8f63);
+  color: white;
+  box-shadow: 0 6px 14px rgba(66, 184, 131, 0.2);
+}
+
+.comment-form .submit-btn:hover {
+  transform: translateY(-1px);
+}
+
+.comment-item {
+  background: #f9fafb;
+  padding: 10px 12px;
+  border-radius: 12px;
+  margin-bottom: 10px;
+  border: 1px solid #eef2f7;
 }
 
 .empty-box {
-  background: white;
-  border-radius: 14px;
+  background: linear-gradient(135deg, #f8fffb 0%, #f6fbff 100%);
+  border: 1px solid #e3f5ea;
+  border-radius: 16px;
   padding: 20px;
-  color: #888;
+  color: #5b6b7a;
   text-align: center;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+  font-weight: 600;
 }
 
 @media (max-width: 900px) {
