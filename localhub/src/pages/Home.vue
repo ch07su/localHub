@@ -4,168 +4,766 @@
 
   <main class="home">
 
+
+    <!-- Hero -->
+
     <section class="hero">
 
-      <h1>서울의 모든 정보를</h1>
+      <div class="hero-content">
 
-      <h2>LocalHub에서 만나보세요</h2>
 
-      <input
-        type="text"
-        placeholder="검색어를 입력하세요."
-      />
+        <h1>
+          어디로 떠나볼까요?
+        </h1>
+
+
+        <p>
+          서울의 맛집부터 관광지까지<br>
+          지역 주민이 직접 공유하는 LocalHub
+        </p>
+
+
+
+        <div class="search-box">
+
+
+          <input 
+            placeholder="지역, 장소, 맛집을 검색해보세요"
+          />
+
+
+          <button>
+            검색
+          </button>
+
+
+        </div>
+
+
+
+
+        
+
+
+
+      </div>
+
 
     </section>
 
-    <section class="cards">
 
-      <div class="card">
 
-        <h3>📌 최근 게시글</h3>
 
-        <ul>
+    <!-- Category -->
 
-          <li>성수 맛집 추천합니다.</li>
+    <section class="categories">
 
-          <li>서울 야경 명소</li>
 
-          <li>이번 주 축제 일정</li>
+      <div class="category-item">
 
-        </ul>
+        <div class="category-icon">
+          🍽
+        </div>
 
-      </div>
-
-      <div class="card">
-
-        <h3>🍴 카테고리</h3>
-
-        <ul>
-
-          <li>맛집</li>
-
-          <li>관광지</li>
-
-          <li>축제</li>
-
-        </ul>
+        <p>
+          맛집
+        </p>
 
       </div>
 
-      <div class="card">
 
-        <h3>⭐ 인기 관광지</h3>
 
-        <ul>
+      <div class="category-item">
 
-          <li>경복궁</li>
+        <div class="category-icon">
+          ☕
+        </div>
 
-          <li>남산타워</li>
-
-          <li>한강공원</li>
-
-        </ul>
+        <p>
+          카페
+        </p>
 
       </div>
+
+
+
+      <div class="category-item">
+
+        <div class="category-icon">
+          🏛
+        </div>
+
+        <p>
+          관광지
+        </p>
+
+      </div>
+
+
+
+      <div class="category-item">
+
+        <div class="category-icon">
+          🌳
+        </div>
+
+        <p>
+          자연
+        </p>
+
+      </div>
+
+
+
+      <div class="category-item">
+
+        <div class="category-icon">
+          🎨
+        </div>
+
+        <p>
+          문화
+        </p>
+
+      </div>
+
+
+
+      <div class="category-item">
+
+        <div class="category-icon">
+          🛍
+        </div>
+
+        <p>
+          쇼핑
+        </p>
+
+      </div>
+
 
     </section>
+
+
+
+
+
+    <!-- Community Shortcut -->
+
+    <section class="community-section">
+
+
+      <div class="community-card">
+
+
+        <div class="community-text">
+
+
+          <h2>
+            지역 이야기를 나눠보세요
+          </h2>
+
+
+          <p>
+            맛집 후기부터 숨은 명소 추천까지<br>
+            LocalHub 게시판에서 지역 정보를 공유하세요.
+          </p>
+
+
+
+          <RouterLink 
+            to="/community"
+            class="community-btn"
+          >
+            게시판 바로가기 →
+          </RouterLink>
+
+
+        </div>
+
+
+
+
+        <div class="community-icon">
+
+          💬
+
+        </div>
+
+
+
+      </div>
+
+
+    </section>
+
+
+
 
   </main>
 
+
   <Footer />
+
 
 </template>
 
+
+
+
+
 <script setup>
+
 
 import Header from '../components/Header.vue'
 import Footer from '../components/Footer.vue'
 
+
 </script>
+
+
+
+
 
 <style scoped>
 
+
 .home{
 
-max-width:1200px;
+  background:#faf9f6;
 
-margin:auto;
+  min-height:100vh;
 
-padding:40px;
+  padding-bottom:60px;
 
 }
+
+
+
+
+
+/* Hero */
+
 
 .hero{
 
-text-align:center;
 
-margin-bottom:50px;
+  max-width:1200px;
 
-}
 
-.hero h1{
+  height:380px;
 
-font-size:42px;
 
-margin-bottom:10px;
+  margin:40px auto;
 
-}
 
-.hero h2{
+  display:flex;
 
-color:#42b883;
 
-margin-bottom:30px;
+  justify-content:center;
 
-}
 
-input{
+  align-items:center;
 
-width:500px;
 
-padding:15px;
+  background:
 
-border-radius:10px;
+  linear-gradient(
+    135deg,
+    #fff7ef,
+    #ffffff
+  );
 
-border:1px solid #ccc;
 
-font-size:16px;
+  border-radius:24px;
+
 
 }
 
-.cards{
 
-display:flex;
 
-gap:25px;
 
-justify-content:center;
+.hero-content{
 
-}
 
-.card{
+  text-align:center;
 
-flex:1;
-
-background:white;
-
-padding:25px;
-
-border-radius:15px;
-
-box-shadow:0 3px 10px rgba(0,0,0,.08);
 
 }
 
-.card h3{
 
-margin-bottom:20px;
+
+
+
+.hero-content h1{
+
+
+  font-size:48px;
+
+
+  font-weight:800;
+
+
+  color:#222;
+
+
+  margin-bottom:20px;
+
 
 }
 
-.card li{
 
-margin-bottom:12px;
+
+
+
+.hero-content p{
+
+
+  font-size:20px;
+
+
+  line-height:1.7;
+
+
+  color:#666;
+
+
+  margin-bottom:30px;
+
 
 }
+
+
+
+
+
+/* Search */
+
+
+.search-box{
+
+
+  display:flex;
+
+
+  width:600px;
+
+
+  height:60px;
+
+
+  margin:auto;
+
+
+  box-shadow:
+
+  0 5px 20px rgba(0,0,0,.08);
+
+
+  border-radius:15px;
+
+
+  overflow:hidden;
+
+
+}
+
+
+
+
+
+.search-box input{
+
+
+  flex:1;
+
+
+  border:none;
+
+
+  padding:0 25px;
+
+
+  font-size:16px;
+
+
+  outline:none;
+
+
+}
+
+
+
+
+
+.search-box button{
+
+
+  width:120px;
+
+
+  border:none;
+
+
+  background:#ff7a00;
+
+
+  color:white;
+
+
+  font-size:16px;
+
+
+  font-weight:bold;
+
+
+  cursor:pointer;
+
+
+}
+
+
+
+
+
+/* Tags */
+
+
+.tags{
+
+
+  margin-top:25px;
+
+
+}
+
+
+
+
+.tags span{
+
+
+  display:inline-flex;
+
+
+  align-items:center;
+
+
+  padding:10px 18px;
+
+
+  margin:5px;
+
+
+  background:white;
+
+
+  border-radius:25px;
+
+
+  border:1px solid #eee;
+
+
+  font-size:14px;
+
+
+  box-shadow:
+
+  0 3px 10px rgba(0,0,0,.04);
+
+
+}
+
+
+
+
+
+
+/* Category */
+
+
+.categories{
+
+
+  max-width:1100px;
+
+
+  margin:40px auto 50px;
+
+
+  display:flex;
+
+
+  justify-content:center;
+
+
+  gap:20px;
+
+
+}
+
+
+
+
+
+.category-item{
+
+
+  width:140px;
+
+
+  height:130px;
+
+
+  background:white;
+
+
+  border-radius:20px;
+
+
+  display:flex;
+
+
+  flex-direction:column;
+
+
+  justify-content:center;
+
+
+  align-items:center;
+
+
+  border:1px solid #eee;
+
+
+  transition:.3s;
+
+
+  cursor:pointer;
+
+
+}
+
+
+
+
+
+.category-item:hover{
+
+
+  transform:translateY(-6px);
+
+
+  box-shadow:
+
+  0 10px 25px rgba(0,0,0,.08);
+
+
+}
+
+
+
+
+
+.category-icon{
+
+
+  font-size:42px;
+
+
+  margin-bottom:12px;
+
+
+}
+
+
+
+
+
+.category-item p{
+
+
+  font-size:16px;
+
+
+  font-weight:600;
+
+
+  color:#333;
+
+
+}
+
+
+
+
+
+
+/* Community */
+
+
+.community-section{
+
+
+  max-width:1100px;
+
+
+  margin:0 auto 70px;
+
+
+}
+
+
+
+
+
+.community-card{
+
+
+  background:white;
+
+
+  border-radius:24px;
+
+
+  padding:40px;
+
+
+  display:flex;
+
+
+  justify-content:space-between;
+
+
+  align-items:center;
+
+
+  border:1px solid #eee;
+
+
+  box-shadow:
+
+  0 5px 20px rgba(0,0,0,.05);
+
+
+  transition:.3s;
+
+
+}
+
+
+
+
+
+.community-card:hover{
+
+
+  transform:translateY(-5px);
+
+
+  box-shadow:
+
+  0 10px 30px rgba(0,0,0,.1);
+
+
+}
+
+
+
+
+
+.community-text h2{
+
+
+  font-size:28px;
+
+
+  font-weight:800;
+
+
+  color:#222;
+
+
+  margin-bottom:15px;
+
+
+}
+
+
+
+
+
+.community-text p{
+
+
+  color:#666;
+
+
+  line-height:1.7;
+
+
+  margin-bottom:25px;
+
+
+}
+
+
+
+
+
+.community-btn{
+
+
+  display:inline-block;
+
+
+  background:#ff7a00;
+
+
+  color:white;
+
+
+  padding:14px 25px;
+
+
+  border-radius:12px;
+
+
+  text-decoration:none;
+
+
+  font-weight:700;
+
+
+  transition:.3s;
+
+
+}
+
+
+
+
+
+.community-btn:hover{
+
+
+  background:#e96d00;
+
+
+}
+
+
+
+
+
+.community-icon{
+
+
+  font-size:80px;
+
+
+}
+
+
 
 </style>

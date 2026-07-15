@@ -1,79 +1,282 @@
 <template>
-  <header class="header">
 
-    <div class="logo">
-      📍 LocalHub
-    </div>
+<header class="header">
 
-    <nav>
 
-      <RouterLink to="/">홈</RouterLink>
+  <div class="logo">
 
-      <RouterLink to="/community">게시판</RouterLink>
+    <span class="pin">📍</span>
+    LocalHub
 
-      <RouterLink to="/map">지도</RouterLink>
+  </div>
 
-    </nav>
 
-  </header>
+
+  <nav>
+
+    <RouterLink to="/">
+      홈
+    </RouterLink>
+
+
+    <RouterLink to="/community">
+      게시판
+    </RouterLink>
+
+
+    <RouterLink to="/map">
+      지도
+    </RouterLink>
+
+
+    <RouterLink to="/recommend">
+      추천
+    </RouterLink>
+
+
+  </nav>
+
+
+
+  <div class="actions">
+
+    <button>
+      🔍
+    </button>
+
+
+    <button class="login">
+      로그인
+    </button>
+
+  </div>
+
+
+
+</header>
+
 </template>
+
+
 
 <style scoped>
 
+
 .header{
+
 
 display:flex;
 
-justify-content:space-between;
 
 align-items:center;
 
-padding:20px 40px;
+
+justify-content:space-between;
+
+
+height:80px;
+
+
+padding:0 60px;
+
 
 background:white;
 
-box-shadow:0 2px 5px rgba(0,0,0,.08);
+
+border-bottom:1px solid #eee;
+
+
+position:sticky;
+
+
+top:0;
+
+
+z-index:100;
+
+
 
 }
+
+
+
+
 
 .logo{
 
-font-size:24px;
 
-font-weight:bold;
+font-size:26px;
 
-color:#2c3e50;
 
-}
+font-weight:800;
 
-nav{
+
+color:#222;
+
 
 display:flex;
 
-gap:30px;
+
+align-items:center;
+
+
+gap:6px;
+
 
 }
 
-a{
+
+
+
+
+.pin{
+
+
+font-size:25px;
+
+
+}
+
+
+
+
+
+nav{
+
+
+display:flex;
+
+
+gap:40px;
+
+
+}
+
+
+
+
+
+nav a{
+
 
 text-decoration:none;
 
-color:#333;
 
-font-weight:bold;
+color:#555;
+
+
+font-size:16px;
+
+
+font-weight:600;
+
+
+transition:.3s;
+
 
 }
 
-a:hover{
 
-color:#42b883;
+
+
+
+nav a:hover{
+
+
+color:#ff7a00;
+
 
 }
+
+
+
+
 
 .router-link-active{
 
-color:#42b883;
+
+color:#ff7a00;
+
 
 }
+
+
+
+
+
+.actions{
+
+
+display:flex;
+
+
+align-items:center;
+
+
+gap:15px;
+
+
+}
+
+
+
+
+
+.actions button{
+
+
+border:none;
+
+
+background:none;
+
+
+font-size:18px;
+
+
+cursor:pointer;
+
+
+}
+
+
+
+
+
+.login{
+
+
+background:#ff7a00 !important;
+
+
+color:white;
+
+
+padding:10px 20px;
+
+
+border-radius:20px;
+
+
+font-size:14px !important;
+
+
+font-weight:600;
+
+
+}
+
+
+
+.login:hover{
+
+
+background:#e96d00 !important;
+
+
+}
+
+
+
 
 </style>
