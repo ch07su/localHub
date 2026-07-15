@@ -16,7 +16,7 @@
           <div class="search-box">
             <input
               v-model="placeQuery"
-              @input="updateSearchResults"
+              @compositionend="handleCompositionEnd"
               placeholder="장소명, 지역, 키워드를 입력하세요"
             />
             <button type="button" @click="selectFirstResult">검색</button>
@@ -53,6 +53,12 @@
               v-for="(place, index) in selectedPlaces"
               :key="place.id"
               class="selected-card"
+              :class="{ dragging: draggedIndex === index }"
+              draggable="true"
+              @dragstart="handleDragStart(index)"
+              @dragend="handleDragEnd"
+              @dragover.prevent
+              @drop.prevent="handleDrop(index)"
             >
               <div class="selected-card-left">
                 <span class="place-order">{{ index + 1 }}</span>
@@ -96,7 +102,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import Header from '../components/Header.vue'
 import Footer from '../components/Footer.vue'
 
@@ -107,9 +113,9 @@ import shoppingData from '../data/서울_쇼핑.json'
 import accommodationData from '../data/서울_숙박.json'
 
 const placeQuery = ref('')
-const searchResults = ref([])
 const placeOptions = ref([])
 const selectedPlaces = ref([])
+const draggedIndex = ref(null)
 const routeSummary = ref('')
 const routeError = ref('')
 const routeMapInstance = ref(null)
@@ -149,7 +155,7 @@ function buildPlaceOptions() {
   placeOptions.value = merged
 }
 
-const filteredSearchResults = computed(() => {
+const searchResults = computed(() => {
   const query = placeQuery.value.trim().toLowerCase()
   if (!query) return []
 
@@ -163,8 +169,9 @@ const filteredSearchResults = computed(() => {
     .slice(0, 12)
 })
 
-function updateSearchResults() {
-  searchResults.value = filteredSearchResults.value
+function handleCompositionEnd() {
+  // 한글 IME 입력 확정 시 즉시 검색 결과가 반영되도록 처리
+  // computed 결과를 사용하므로 별도 로직은 필요하지 않습니다.
 }
 
 function selectPlace(place) {
@@ -172,7 +179,6 @@ function selectPlace(place) {
 
   selectedPlaces.value.push(place)
   placeQuery.value = ''
-  searchResults.value = []
   routeError.value = ''
   routeSummary.value = ''
   focusMap(place)
@@ -185,9 +191,27 @@ function removePlace(place) {
 }
 
 function selectFirstResult() {
-  if (filteredSearchResults.value.length > 0) {
-    selectPlace(filteredSearchResults.value[0])
+  if (searchResults.value.length > 0) {
+    selectPlace(searchResults.value[0])
   }
+}
+
+function handleDragStart(index) {
+  draggedIndex.value = index
+}
+
+function handleDragEnd() {
+  draggedIndex.value = null
+}
+
+function handleDrop(index) {
+  if (draggedIndex.value === null || draggedIndex.value === index) return
+
+  const movedItem = selectedPlaces.value.splice(draggedIndex.value, 1)[0]
+  selectedPlaces.value.splice(index, 0, movedItem)
+  draggedIndex.value = null
+  routeError.value = ''
+  routeSummary.value = ''
 }
 
 function loadKakaoMapScript() {
@@ -214,6 +238,7 @@ function initMap() {
       center: new window.kakao.maps.LatLng(37.5665, 126.9780),
       level: 7
     })
+    routeMapInstance.value.relayout?.()
   }
 
   return routeMapInstance.value
@@ -284,10 +309,17 @@ function buildRoute() {
   routeSummary.value = '선택한 장소를 연결한 단순 경로를 표시했습니다.'
 }
 
-onMounted(() => {
+onMounted(async () => {
   buildPlaceOptions()
+  await nextTick()
+
   loadKakaoMapScript()
-    .then(() => initMap())
+    .then(() => {
+      const map = initMap()
+      if (map && typeof map.relayout === 'function') {
+        map.relayout()
+      }
+    })
     .catch((err) => console.error(err))
 })
 </script>
@@ -469,6 +501,10 @@ onMounted(() => {
   border-radius: 20px;
   border: 1px solid #f2e4d4;
   background: #fff8f2;
+}
+
+.selected-card.dragging {
+  opacity: 0.5;
 }
 
 .selected-card-left {
