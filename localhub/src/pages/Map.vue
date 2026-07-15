@@ -109,6 +109,7 @@ const categoryTabs = [
   { id: 'accommodation', name: '숙박', data: accommodationData }
 ]
 
+const kakaoMapAppKey = import.meta.env.VITE_KAKAO_MAP_APPKEY || ''
 const currentCategory = ref('none')
 const selectedDistrict = ref('all')
 const searchQuery = ref('')
