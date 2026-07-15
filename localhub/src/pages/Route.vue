@@ -15,8 +15,8 @@
         <div class="hero-card">
           <div class="search-box">
             <input
-              v-model="placeQuery"
-              @input="updateSearchResults"
+              :value="placeQuery"
+              @input="placeQuery = $event.target.value"
               placeholder="장소명, 지역, 키워드를 입력하세요"
             />
             <button type="button" @click="selectFirstResult">검색</button>
@@ -26,7 +26,7 @@
             <li
               v-for="item in searchResults"
               :key="item.id"
-              @click="selectPlace(item)"
+              @mousedown.prevent="selectPlace(item)"
             >
               <strong>{{ item.title }}</strong>
               <span>{{ item.address || '주소 정보 없음' }}</span>
@@ -48,11 +48,19 @@
             </div>
           </div>
 
-          <div class="selected-cards">
+          <TransitionGroup
+            tag="div"
+            name="card-list"
+            class="selected-cards"
+          >
             <div
               v-for="(place, index) in selectedPlaces"
               :key="place.id"
+              :data-index="index"
               class="selected-card"
+              :class="{ dragging: draggedIndex === index }"
+              :style="draggedIndex === index ? { transform: `translateY(${dragTranslateY}px)` } : {}"
+              @mousedown="handleDragStart(index, $event)"
             >
               <div class="selected-card-left">
                 <span class="place-order">{{ index + 1 }}</span>
@@ -61,15 +69,15 @@
                   <p class="place-address">{{ place.address }}</p>
                 </div>
               </div>
-              <button class="remove-btn" @click="removePlace(place)">
+              <button class="remove-btn" @mousedown.stop @click="removePlace(place)">
                 삭제
               </button>
             </div>
 
-            <div v-if="!selectedPlaces.length" class="empty-selected">
+            <div v-if="!selectedPlaces.length" key="empty" class="empty-selected">
               검색에서 장소를 추가하면 여기서 경로 순서를 확인할 수 있어요.
             </div>
-          </div>
+          </TransitionGroup>
 
           <button
             class="build-route-btn"
@@ -96,7 +104,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import Header from '../components/Header.vue'
 import Footer from '../components/Footer.vue'
 
@@ -107,9 +115,9 @@ import shoppingData from '../data/서울_쇼핑.json'
 import accommodationData from '../data/서울_숙박.json'
 
 const placeQuery = ref('')
-const searchResults = ref([])
 const placeOptions = ref([])
 const selectedPlaces = ref([])
+const draggedIndex = ref(null)
 const routeSummary = ref('')
 const routeError = ref('')
 const routeMapInstance = ref(null)
@@ -149,7 +157,7 @@ function buildPlaceOptions() {
   placeOptions.value = merged
 }
 
-const filteredSearchResults = computed(() => {
+const searchResults = computed(() => {
   const query = placeQuery.value.trim().toLowerCase()
   if (!query) return []
 
@@ -163,16 +171,12 @@ const filteredSearchResults = computed(() => {
     .slice(0, 12)
 })
 
-function updateSearchResults() {
-  searchResults.value = filteredSearchResults.value
-}
 
 function selectPlace(place) {
   if (selectedPlaces.value.some((item) => item.id === place.id)) return
 
   selectedPlaces.value.push(place)
   placeQuery.value = ''
-  searchResults.value = []
   routeError.value = ''
   routeSummary.value = ''
   focusMap(place)
@@ -185,9 +189,100 @@ function removePlace(place) {
 }
 
 function selectFirstResult() {
-  if (filteredSearchResults.value.length > 0) {
-    selectPlace(filteredSearchResults.value[0])
+  if (searchResults.value.length > 0) {
+    selectPlace(searchResults.value[0])
   }
+}
+
+const dragTranslateY = ref(0)
+let dragEl = null
+let pointerStartY = 0
+let elStartTop = 0
+let elHeight = 0
+let containerTop = 0
+let containerBottom = 0
+
+function handleDragStart(index, event) {
+  if (event.button !== 0) return
+
+  event.preventDefault()
+
+  const card = event.currentTarget
+  dragEl = card
+  draggedIndex.value = index
+  dragTranslateY.value = 0
+  pointerStartY = event.clientY
+
+  const rect = card.getBoundingClientRect()
+  elStartTop = rect.top
+  elHeight = rect.height
+
+  const container = card.parentElement
+  const containerRect = container.getBoundingClientRect()
+  containerTop = containerRect.top
+  containerBottom = containerRect.bottom
+
+  document.body.style.userSelect = 'none'
+  window.addEventListener('mousemove', handleDragMove)
+  window.addEventListener('mouseup', handleDragEnd)
+}
+
+function handleDragMove(event) {
+  if (draggedIndex.value === null) return
+
+  let delta = event.clientY - pointerStartY
+  const newTop = elStartTop + delta
+  const newBottom = newTop + elHeight
+
+  if (newTop < containerTop) {
+    delta = containerTop - elStartTop
+  } else if (newBottom > containerBottom) {
+    delta = containerBottom - elStartTop - elHeight
+  }
+
+  dragTranslateY.value = delta
+
+  const draggedCenter = elStartTop + elHeight / 2 + delta
+  const container = dragEl.parentElement
+  const currentIndex = draggedIndex.value
+
+  const belowEl = container.querySelector(`[data-index="${currentIndex + 1}"]`)
+  if (belowEl) {
+    const belowRect = belowEl.getBoundingClientRect()
+    const belowCenter = belowRect.top + belowRect.height / 2
+
+    if (draggedCenter > belowCenter) {
+      const moved = selectedPlaces.value.splice(currentIndex, 1)[0]
+      selectedPlaces.value.splice(currentIndex + 1, 0, moved)
+      elStartTop += belowRect.height
+      draggedIndex.value = currentIndex + 1
+      return
+    }
+  }
+
+  const aboveEl = container.querySelector(`[data-index="${currentIndex - 1}"]`)
+  if (aboveEl) {
+    const aboveRect = aboveEl.getBoundingClientRect()
+    const aboveCenter = aboveRect.top + aboveRect.height / 2
+
+    if (draggedCenter < aboveCenter) {
+      const moved = selectedPlaces.value.splice(currentIndex, 1)[0]
+      selectedPlaces.value.splice(currentIndex - 1, 0, moved)
+      elStartTop -= aboveRect.height
+      draggedIndex.value = currentIndex - 1
+    }
+  }
+}
+
+function handleDragEnd() {
+  draggedIndex.value = null
+  dragTranslateY.value = 0
+  dragEl = null
+  document.body.style.userSelect = ''
+  window.removeEventListener('mousemove', handleDragMove)
+  window.removeEventListener('mouseup', handleDragEnd)
+  routeError.value = ''
+  routeSummary.value = ''
 }
 
 function loadKakaoMapScript() {
@@ -214,6 +309,7 @@ function initMap() {
       center: new window.kakao.maps.LatLng(37.5665, 126.9780),
       level: 7
     })
+    routeMapInstance.value.relayout?.()
   }
 
   return routeMapInstance.value
@@ -284,10 +380,17 @@ function buildRoute() {
   routeSummary.value = '선택한 장소를 연결한 단순 경로를 표시했습니다.'
 }
 
-onMounted(() => {
+onMounted(async () => {
   buildPlaceOptions()
+  await nextTick()
+
   loadKakaoMapScript()
-    .then(() => initMap())
+    .then(() => {
+      const map = initMap()
+      if (map && typeof map.relayout === 'function') {
+        map.relayout()
+      }
+    })
     .catch((err) => console.error(err))
 })
 </script>
@@ -469,6 +572,19 @@ onMounted(() => {
   border-radius: 20px;
   border: 1px solid #f2e4d4;
   background: #fff8f2;
+  position: relative;
+  cursor: grab;
+}
+
+.selected-card.dragging {
+  cursor: grabbing;
+  z-index: 5;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.15);
+  transition: none;
+}
+
+.card-list-move {
+  transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1);
 }
 
 .selected-card-left {

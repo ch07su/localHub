@@ -84,12 +84,16 @@
         <p>검색 결과와 일치하는 장소가 없습니다. 🥲</p>
       </div>
     </section>
+
+    <Footer />
   </div>
 </template>
 
 <script setup>
-import { onMounted, ref, computed } from 'vue'
 import Header from '../components/Header.vue'
+import Footer from '../components/Footer.vue'
+
+import { onMounted, ref, computed } from 'vue'
 
 import tourData from '../data/서울_관광지.json'
 import leportsData from '../data/서울_레포츠.json'

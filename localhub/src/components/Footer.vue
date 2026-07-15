@@ -8,9 +8,12 @@
         <a href="#" class="quick-link-item">
           <span class="q-icon">❓</span> 자주 묻는 질문
         </a>
-        <a href="#" class="quick-link-item">
+        <router-link
+          :to="{ name: 'Board', query: { tab: 'notice' } }"
+          class="quick-link-item"
+        >
           <span class="q-icon">📢</span> 공지사항
-        </a>
+        </router-link>
         <a href="#" class="quick-link-item">
           <span class="q-icon">✉️</span> 문의하기
         </a>
