@@ -283,12 +283,18 @@ const focusOnMap = (festival) => {
 }
 
 onMounted(() => {
+  if (!kakaoMapAppKey) {
+    console.error('VITE_KAKAO_MAP_APPKEY가 설정되지 않았습니다. .env 파일에 키를 추가해주세요.')
+    return
+  }
+
   if (window.kakao && window.kakao.maps) {
-    kakao.maps.load(initMap)
+    window.kakao.maps.load(initMap)
   } else {
     const script = document.createElement('script')
-    script.src = '//dapi.kakao.com/v2/maps/sdk.js?autoload=false&appkey=72df5c0dbacc0b09d71beb2294c1a9e8'
-    script.onload = () => kakao.maps.load(initMap)
+    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?autoload=false&appkey=${kakaoMapAppKey}`
+    script.onload = () => window.kakao.maps.load(initMap)
+    script.onerror = () => console.error('카카오 지도 SDK 로딩 실패: 앱 키 또는 네트워크를 확인하세요.')
     document.head.appendChild(script)
   }
 })

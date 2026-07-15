@@ -102,12 +102,57 @@ const sendMessage = async () => {
   }
 
   // 2. [최적화] 사용자의 질문에 맞춰서 필요한 파일 데이터만 선별하여 보냅니다 (토큰 절약 및 에러 방지)
-  let contextData = {};
+  const query = userQuery.trim().toLowerCase()
 
+  const getItemsForCategory = (category) => {
+    return seoulData[category]?.items || []
+  }
+
+  const matchedItems = []
   if (selectedCategory.value === 'all') {
-    contextData = seoulData
+    Object.keys(seoulData).forEach((category) => {
+      matchedItems.push(
+        ...getItemsForCategory(category).filter((item) => {
+          const title = (item.title || '').toLowerCase()
+          const addr = (item.addr1 || '').toLowerCase()
+          const tel = (item.tel || '').toLowerCase()
+          return query && (title.includes(query) || addr.includes(query) || tel.includes(query))
+        })
+      )
+    })
   } else {
-    contextData[selectedCategory.value] = seoulData[selectedCategory.value]
+    matchedItems.push(
+      ...getItemsForCategory(selectedCategory.value).filter((item) => {
+        const title = (item.title || '').toLowerCase()
+        const addr = (item.addr1 || '').toLowerCase()
+        const tel = (item.tel || '').toLowerCase()
+        return query && (title.includes(query) || addr.includes(query) || tel.includes(query))
+      })
+    )
+  }
+
+  let contextData = {}
+
+  if (matchedItems.length > 0) {
+    if (selectedCategory.value === 'all') {
+      contextData = {
+        관광지: { ...seoulData.관광지, items: matchedItems.slice(0, 20) },
+        레포츠: { ...seoulData.레포츠, items: [] },
+        문화시설: { ...seoulData.문화시설, items: [] },
+        쇼핑: { ...seoulData.쇼핑, items: [] },
+        숙박: { ...seoulData.숙박, items: [] }
+      }
+    } else {
+      contextData[selectedCategory.value] = {
+        ...seoulData[selectedCategory.value],
+        items: matchedItems.slice(0, 20)
+      }
+    }
+  } else {
+    contextData =
+      selectedCategory.value === 'all'
+        ? seoulData
+        : { [selectedCategory.value]: seoulData[selectedCategory.value] }
   }
 
   // 특별한 키워드가 없다면 질문 답변의 퀄리티를 위해 전체 데이터를 가볍게 요약해서 보냅니다.
@@ -127,12 +172,37 @@ const sendMessage = async () => {
         messages: [
           { 
             role: 'system', 
-            content: `당신은 서울 지역 장소 이름 검색 전문 AI입니다.
-                      사용자가 장소 이름을 묻기 전에는 상세 정보를 제공하지 마세요.
-                      질문이 장소 추천/검색 관련이면, 우선 장소 이름만 목록으로 제시해 주세요. ,를 넣어 구분하고, 각 장소 이름은 한 줄씩 줄바꿈해서 보여주세요.
-                      사용자가 추가로 상세 정보를 요청하면 그때 주소, 전화번호, 설명 등을 알려주세요.
-                      데이터에 없는 장소나 억측은 절대로 답변하지 말고 정중하게 모른다고 대답해 주세요.
-                      오직 아래 제공된 [서울 데이터]만 참고하여 답변하고, 데이터에 없으면 모른다고 대답하세요.
+            content: `[역할 정의]
+              당신은 제공된 [서울 데이터]만을 기반으로 서울 지역의 장소를 안내하는 전문 AI 어시스턴트입니다. 항상 존댓말로 정중하고 친절하게 답변하세요.
+
+              [핵심 작동 규칙 (우선순위 순)]
+
+              1. 상세 정보 즉시 제공 규칙 (최우선):
+                - 사용자가 목록에 있는 특정 장소 이름을 언급하며 정보를 요청하는 경우(예: "~에 대해 알려줘", "거기 주소가 어떻게 돼?", "신촌문화발전소")에는 "원하시면 알려주겠다" 같은 되묻기 단계를 절대 거치지 말고, 즉시 해당 장소의 [상세 정보(주소, 전화번호, 설명 등)]를 제공하세요.
+                - "응", "그래", "알려줘"와 같이 이전 대화 맥락에서 상세 정보를 요구하는 짧은 답변을 했을 때도 이전 언급된 장소를 파악하여 상세 정보를 바로 제공해야 합니다.
+
+              2. 장소 추천 및 목록 제시 규칙:
+                - 질문이 특정 장소 검색이나 카테고리 추천(예: "서대문구 문화시설")인 경우, 상세 정보를 먼저 노출하지 마세요.
+                - 오직 장소의 이름들만 목록으로 나열하되, 각 이름은 반드시 '쉼표(,)'로 구분하여 작성하세요.
+                - 예시: "다음은 서대문구에 있는 문화시설입니다: 금호아트홀 연세, 서대문자연사박물관, 신촌문화발전소"
+
+              3. 데이터 제한 및 모르는 정보 처리 규칙:
+                - 오직 제공된 [서울 데이터]에 명시된 장소만 답변할 수 있습니다. 
+                - 데이터에 없는 장소를 묻거나 추측해야 하는 질문에는 지셔내지 말고 정중하게 "죄송합니다만, 해당 장소는 보유하고 있는 데이터에 없어 안내가 어렵습니다."라고 답변하세요.
+
+              4. 예외 처리 (범위 외 질문):
+                - 장소 검색/추천 및 상세 정보 요청과 전혀 무관한 일상 대화나 다른 지역 질문인 경우에만 아래 문구로 통일하여 답변하세요:
+                  "죄송하지만, 서울 지역 장소 이름 검색 및 관련 정보 문의에 대해서만 답변이 가능합니다."
+
+              [대화 예시 흐름 (Few-Shot)]
+              User: "서대문구 문화시설 추천해줘"
+              AI: "서대문구의 문화시설 목록입니다: 금호아트홀 연세, 서대문자연사박물관, 신촌문화발전소"
+
+              User: "신촌문화발전소에 대해 알고 싶어" (혹은 "신촌문화발전소")
+              AI: "신촌문화발전소의 상세 정보입니다.\n- 주소: 서울 서대문구 연세로2다길 43\n- 전화번호: 02-330-8898\n- 설명: 청년 문화예술인의 기획 창작 활동을 지원하는 문화 공간입니다."
+
+              User: "오늘 날씨 어때?"
+              AI: "죄송하지만, 서울 지역 장소 이름 검색 및 관련 정보 문의에 대해서만 답변이 가능합니다."
             
             [서울 데이터]
             ${JSON.stringify(contextData)}` 
