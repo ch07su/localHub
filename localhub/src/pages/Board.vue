@@ -3,40 +3,54 @@
     <Header />
 
     <main class="board-container">
-     <section class="board-header">
-      <div>
-        <p class="eyebrow">커뮤니티</p>
-        <h1>지역 정보 게시판</h1>
-        <p>추천 장소, 맛집, 축제 정보와 경험을 나누세요.</p>
-      </div>
+      <!-- Banner: title + write button + tabs -->
+      <section class="board-header banner">
+        <div class="banner-left">
+          <p class="eyebrow">커뮤니티</p>
+          <h1>지역 커뮤니티</h1>
+          <p>서울 시민들과 소통하고, 유용한 정보를 나누세요.</p>
+        </div>
 
-      <div class="header-actions">
-        <button class="sub-nav-card" @click="goToActivity('likes')">
-          <span class="card-icon">👍</span>
-          <span class="card-text">
-            <strong>내가 추천한 글</strong>
-            <small>추천한 글 모아보기</small>
-          </span>
-        </button>
+        <div class="banner-right">
+          <button class="write-btn" @click="startCreate">글쓰기</button>
 
-        <button class="sub-nav-card" @click="goToActivity('favorites')">
-          <span class="card-icon">⭐</span>
-          <span class="card-text">
-            <strong>내가 관심 등록한 글</strong>
-            <small>관심 있는 글 확인하기</small>
-          </span>
-        </button>
+          <!-- activity cards under write button -->
+          <div class="activity-cards">
+            <button class="activity-card" @click="goToActivity('likes')">
+              <div class="card-left">👍</div>
+              <div class="card-body">
+                <div class="card-title">내가 추천한 글</div>
+                <div class="card-sub">추천한 글 모아보기</div>
+              </div>
+              <div class="card-badge">{{ likesCount }}</div>
+            </button>
 
-        <button class="write-card" @click="startCreate">
-          <span class="card-icon">✍️</span>
-          <span class="card-text">
-            <strong>글쓰기</strong>
-            <small>새 글을 작성해보세요</small>
-          </span>
-        </button>
-      </div>
-    </section>
+            <button class="activity-card" @click="goToActivity('favorites')">
+              <div class="card-left">⭐</div>
+              <div class="card-body">
+                <div class="card-title">내가 관심 등록한 글</div>
+                <div class="card-sub">관심 있는 글 확인하기</div>
+              </div>
+              <div class="card-badge">{{ favorites.length }}</div>
+            </button>
+          </div>
+        </div>
 
+        <nav class="board-tabs" aria-label="게시판 탭">
+          <button
+            v-for="tab in boardTabs"
+            :key="tab.key"
+            class="tab-btn"
+            :class="{ active: selectedBoardTab === tab.key }"
+            @click="selectedBoardTab = tab.key"
+          >
+            <span class="tab-title">{{ tab.label }}</span>
+            <span class="tab-count">{{ tabCount(tab.key) }}</span>
+          </button>
+        </nav>
+      </section>
+
+      <!-- toolbar: search, region, topic -->
       <section class="toolbar">
         <input
           v-model="searchQuery"
@@ -54,20 +68,14 @@
 
           <select v-model="selectedCategory">
             <option value="주제">주제 선택</option>
-            <option value="관광지">관광지</option>
-            <option value="레포츠">레포츠</option>
-            <option value="문화시설">문화시설</option>
-            <option value="쇼핑">쇼핑</option>
-            <option value="여행코스">여행코스</option>
-            <option value="숙박">숙박</option>
-            <option value="축제">축제</option>
-            <option value="공연">공연</option>
-            <option value="행사">행사</option>
-            <option value="맛집">맛집</option>
+            <option value="공지사항">공지사항</option>
+            <option value="자유게시판">자유게시판</option>
+            <option value="Q&A">Q&A</option>
           </select>
         </div>
       </section>
 
+      <!-- write form -->
       <section v-if="showForm" class="write-form">
         <h2>{{ isEditing ? '게시글 수정' : '새 글 작성' }}</h2>
 
@@ -88,16 +96,9 @@
 
         <div class="form-row">
           <select v-model="form.category">
-            <option value="관광지">관광지</option>
-            <option value="레포츠">레포츠</option>
-            <option value="문화시설">문화시설</option>
-            <option value="쇼핑">쇼핑</option>
-            <option value="여행코스">여행코스</option>
-            <option value="숙박">숙박</option>
-            <option value="축제">축제</option>
-            <option value="공연">공연</option>
-            <option value="행사">행사</option>
-            <option value="맛집">맛집</option>
+            <option value="공지사항">공지사항</option>
+            <option value="자유게시판">자유게시판</option>
+            <option value="Q&A">Q&A</option>
           </select>
 
           <input
@@ -121,6 +122,7 @@
         </div>
       </section>
 
+      <!-- posts list -->
       <section class="post-list">
         <div class="table-wrapper">
           <table class="post-table">
@@ -175,9 +177,16 @@ const FAVORITES_KEY = 'localhub-favorites'
 const router = useRouter()
 
 const regionOptions = [
-  '종로구', '중구', '용산구', '성동구', '광진구', '동대문구', '중랑구', '성북구', '강북구', '도봉구',
-  '노원구', '은평구', '서대문구', '마포구', '양천구', '강서구', '구로구', '금천구', '영등포구', '동작구',
-  '관악구', '서초구', '강남구', '송파구', '강동구'
+  '종로구','중구','용산구','성동구','광진구','동대문구','중랑구','성북구','강북구','도봉구',
+  '노원구','은평구','서대문구','마포구','양천구','강서구','구로구','금천구','영등포구','동작구',
+  '관악구','서초구','강남구','송파구','강동구'
+]
+
+const boardTabs = [
+  { key: 'all', label: '전체 게시글' },
+  { key: 'notice', label: '공지사항' },
+  { key: 'free', label: '자유게시판' },
+  { key: 'qa', label: 'Q&A' }
 ]
 
 const defaultPosts = [
@@ -187,13 +196,13 @@ const defaultPosts = [
     writer: '익명',
     password: '1234',
     region: '성동구',
-    category: '맛집',
+    category: '공지사항',
     content: '성수동에서 가볼 만한 맛집을 소개합니다.',
     createdAt: '2026-07-14',
     views: 12,
     likes: 3,
     likedByMe: false,
-    tags: ['성수', '맛집', '서울'],
+    tags: ['성수','맛집','서울'],
     image: '',
     comments: [{ id: 1, writer: '민수', text: '저도 가보고 싶어요.' }]
   },
@@ -203,13 +212,13 @@ const defaultPosts = [
     writer: '홍길동',
     password: '1111',
     region: '영등포구',
-    category: '관광지',
+    category: '자유게시판',
     content: '여의도 한강공원에서 피크닉하기 좋아요.',
     createdAt: '2026-07-13',
     views: 8,
     likes: 2,
     likedByMe: false,
-    tags: ['한강', '피크닉', '여의도'],
+    tags: ['한강','피크닉','여의도'],
     image: '',
     comments: []
   },
@@ -219,13 +228,13 @@ const defaultPosts = [
     writer: '김철수',
     password: '2222',
     region: '강남구',
-    category: '축제',
+    category: 'Q&A',
     content: '이번 주 진행되는 지역 축제 정보를 정리했습니다.',
     createdAt: '2026-07-12',
     views: 15,
     likes: 5,
     likedByMe: false,
-    tags: ['축제', '주말', '지역행사'],
+    tags: ['축제','주말','지역행사'],
     image: '',
     comments: []
   }
@@ -235,8 +244,9 @@ const posts = ref([])
 const favorites = ref([])
 const searchQuery = ref('')
 const selectedRegion = ref('전체')
-const selectedCategory = ref('주제')
+const selectedCategory = ref('주제') // topic selector (separate from board tab)
 const selectedTag = ref('전체')
+const selectedBoardTab = ref('all')
 const showForm = ref(false)
 const isEditing = ref(false)
 const selectedPost = ref(null)
@@ -246,7 +256,7 @@ const form = ref({
   writer: '',
   password: '',
   region: '',
-  category: '맛집',
+  category: '자유게시판',
   content: '',
   image: '',
   tagInput: ''
@@ -263,12 +273,78 @@ const availableTags = computed(() => {
   return ['전체', ...Array.from(tags).sort()]
 })
 
+function savePosts() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(posts.value))
+}
+
+function saveFavorites() {
+  localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites.value))
+}
+
+function loadPosts() {
+  const saved = localStorage.getItem(STORAGE_KEY)
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved)
+      if (Array.isArray(parsed)) {
+        posts.value = parsed.map((item) => ({
+          ...item,
+          region: item.region || '',
+          category: item.category || '자유게시판',
+          likes: item.likes || 0,
+          likedByMe: item.likedByMe || false,
+          tags: item.tags || [],
+          image: item.image || '',
+          comments: item.comments || [],
+          views: item.views || 0
+        }))
+        selectedPost.value = posts.value[0] || null
+        return
+      }
+    } catch (error) {
+      console.error('저장된 게시글을 불러오지 못했습니다.', error)
+    }
+  }
+
+  posts.value = defaultPosts.map((p) => ({ ...p }))
+  selectedPost.value = posts.value[0] || null
+  savePosts()
+}
+
+function loadFavorites() {
+  const saved = localStorage.getItem(FAVORITES_KEY)
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved)
+      if (Array.isArray(parsed)) favorites.value = parsed
+    } catch (error) {
+      console.error('관심 게시글을 불러오지 못했습니다.', error)
+    }
+  }
+}
+
+const likesCount = computed(() => posts.value.filter((p) => p.likedByMe).length)
+
+const tabCount = (key) => {
+  if (key === 'all') return posts.value.length
+  if (key === 'notice') return posts.value.filter((p) => p.category === '공지사항').length
+  if (key === 'free') return posts.value.filter((p) => p.category === '자유게시판').length
+  if (key === 'qa') return posts.value.filter((p) => p.category === 'Q&A').length
+  return 0
+}
+
 const filteredPosts = computed(() => {
   const query = searchQuery.value.trim().toLowerCase()
 
   return posts.value.filter((post) => {
     const matchRegion =
       selectedRegion.value === '전체' || post.region === selectedRegion.value
+
+    const matchBoardTab =
+      selectedBoardTab.value === 'all' ||
+      (selectedBoardTab.value === 'notice' && post.category === '공지사항') ||
+      (selectedBoardTab.value === 'free' && post.category === '자유게시판') ||
+      (selectedBoardTab.value === 'qa' && post.category === 'Q&A')
 
     const matchCategory =
       selectedCategory.value === '주제' || post.category === selectedCategory.value
@@ -283,65 +359,9 @@ const filteredPosts = computed(() => {
       post.content.toLowerCase().includes(query) ||
       (post.tags || []).join(' ').toLowerCase().includes(query)
 
-    return matchRegion && matchCategory && matchTag && matchQuery
+    return matchRegion && matchBoardTab && matchCategory && matchTag && matchQuery
   })
 })
-
-const favoritePosts = computed(() =>
-  posts.value.filter((post) => favorites.value.includes(post.id))
-)
-
-function savePosts() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(posts.value))
-}
-
-function saveFavorites() {
-  localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites.value))
-}
-
-function loadPosts() {
-  const saved = localStorage.getItem(STORAGE_KEY)
-  if (saved) {
-    try {
-      const parsed = JSON.parse(saved)
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        posts.value = parsed.map((post) => ({
-          ...post,
-          region: post.region || '성동구',
-          category: post.category || '맛집',
-          likes: post.likes || 0,
-          likedByMe: post.likedByMe || false,
-          tags: post.tags || [],
-          image: post.image || '',
-          comments: post.comments || [],
-          views: post.views || 0
-        }))
-        selectedPost.value = posts.value[0] || null
-        return
-      }
-    } catch (error) {
-      console.error('저장된 게시글을 불러오지 못했습니다.', error)
-    }
-  }
-
-  posts.value = defaultPosts.map((post) => ({ ...post }))
-  selectedPost.value = posts.value[0] || null
-  savePosts()
-}
-
-function loadFavorites() {
-  const saved = localStorage.getItem(FAVORITES_KEY)
-  if (saved) {
-    try {
-      const parsed = JSON.parse(saved)
-      if (Array.isArray(parsed)) {
-        favorites.value = parsed
-      }
-    } catch (error) {
-      console.error('관심 게시글을 불러오지 못했습니다.', error)
-    }
-  }
-}
 
 function resetForm() {
   form.value = {
@@ -349,7 +369,7 @@ function resetForm() {
     writer: '',
     password: '',
     region: '',
-    category: '맛집',
+    category: '자유게시판',
     content: '',
     image: '',
     tagInput: ''
@@ -368,7 +388,7 @@ function startEdit(post) {
     writer: post.writer,
     password: '',
     region: post.region || '',
-    category: post.category || '맛집',
+    category: post.category || '자유게시판',
     content: post.content,
     image: post.image || '',
     tagInput: (post.tags || []).join(', ')
@@ -562,139 +582,148 @@ watch(posts, savePosts, { deep: true })
   padding: 32px 20px 80px;
 }
 
-.board-header {
+/* Banner / Tabs */
+.board-header.banner {
+  display: block;
+  padding-bottom: 12px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid #f3f3f3;
+}
+
+.banner-left {
+  display: inline-block;
+}
+
+.banner-right {
+  float: right;
+  margin-top: 8px; /* push slightly down so header won't overlap */
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 20px;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
 }
 
-.eyebrow {
-  color: #ff7a3d;
-  font-weight: 700;
-  font-size: 13px;
-  letter-spacing: 0.04em;
-  margin-bottom: 6px;
-}
-
-.board-header h1 {
-  font-size: 26px;
-  font-weight: 800;
-  color: #222;
-  margin: 0 0 6px;
-}
-
-.board-header p {
-  color: #888;
-  font-size: 14px;
-  margin: 0;
-}
-
-.header-actions {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(150px, 1fr));
+/* activity cards under write button */
+.activity-cards {
+  display: flex;
   gap: 10px;
-  width: min(560px, 100%);
+  margin-top: 6px;
 }
 
-.sub-nav-card,
-.write-card {
-  min-width: 180px;
+.activity-card {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
-  border: 1px solid #f2e2d6;
-  border-radius: 16px;
-  background: linear-gradient(135deg, #fff9f4 0%, #ffffff 100%);
-  box-shadow: 0 8px 20px rgba(255, 122, 61, 0.08);
+  gap: 12px;
+  background: linear-gradient(180deg, #fff 0%, #fffaf6 100%);
+  border: 1px solid #fde8d6;
+  padding: 10px 12px;
+  border-radius: 12px;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  min-width: 220px;
+  box-shadow: 0 8px 20px rgba(255,122,61,0.06);
+  transition: transform .12s ease, box-shadow .12s ease;
 }
 
-.sub-nav-card:hover,
-.write-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 24px rgba(255, 122, 61, 0.16);
+.activity-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 28px rgba(255,122,61,0.12);
 }
 
-.card-icon {
-  width: 40px;
-  height: 40px;
+.card-left {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: #fff2e8;
   display: grid;
   place-items: center;
-  border-radius: 12px;
-  background: #fff2e8;
   font-size: 18px;
 }
 
-.card-text {
+.card-body {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  white-space: nowrap;
 }
 
-.card-text strong,
-.card-text small {
-  white-space: nowrap;
+.card-title {
+  font-weight: 800;
+  color: #222;
+  font-size: 13px;
 }
 
-.write-card {
-  background: linear-gradient(135deg, #ff7a3d 0%, #ff9b5a 100%);
-  border-color: #ff7a3d;
+.card-sub {
+  font-size: 12px;
+  color: #7a7a7a;
 }
 
-.write-card .card-icon {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.write-card .card-text strong,
-.write-card .card-text small {
-  color: white;
-}
-
-.sub-nav-btn {
-  border: 1px solid #ffe0d0;
+.card-badge {
+  margin-left: 8px;
   background: #fff7f2;
   color: #ff7a3d;
-  padding: 9px 14px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 12px;
+}
+
+/* tabs */
+.board-tabs {
+  display: flex;
+  gap: 12px;
+  margin-top: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: #fff;
+  border: 1px solid #ececec;
   border-radius: 8px;
   cursor: pointer;
   font-weight: 700;
+  color: #666;
+  transition: transform .12s ease, box-shadow .12s ease;
 }
 
-.sub-nav-btn:hover {
-  background: #ffe7d8;
+.tab-btn .tab-title {
+  font-size: 14px;
 }
 
-.write-btn,
-.submit-btn,
-.cancel-btn {
+.tab-btn .tab-count {
+  background: #fff7f2;
+  color: #ff7a3d;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.tab-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(0,0,0,0.06); }
+
+.tab-btn.active {
+  background: linear-gradient(135deg,#ffefea 0%, #fff6f2 100%);
+  border-color: #ffb79a;
+  color: #ff7a3d;
+  box-shadow: 0 8px 18px rgba(255,122,61,0.08);
+}
+
+/* Write button */
+.write-btn {
   border: none;
   padding: 9px 18px;
   border-radius: 8px;
   cursor: pointer;
   font-weight: 700;
   font-size: 14px;
-}
-
-.write-btn,
-.submit-btn {
   background: #ff7a3d;
   color: white;
 }
 
-.write-btn:hover,
-.submit-btn:hover {
-  background: #ef6a2e;
-}
-
-.cancel-btn {
-  background: #f1f1f1;
-  color: #444;
-}
-
+/* rest of styles (search, filters, table, forms) */
 .toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -766,11 +795,6 @@ watch(posts, savePosts, { deep: true })
   flex-wrap: wrap;
 }
 
-.write-form textarea {
-  resize: vertical;
-  margin-top: 10px;
-}
-
 .preview-image {
   width: 100%;
   max-height: 220px;
@@ -830,10 +854,6 @@ watch(posts, savePosts, { deep: true })
   background: #fafafa;
 }
 
-.post-table tbody tr:last-child td {
-  border-bottom: none;
-}
-
 .col-no {
   width: 60px;
   color: #999;
@@ -869,10 +889,6 @@ watch(posts, savePosts, { deep: true })
   color: #222;
 }
 
-.post-table tbody tr:hover .title-text {
-  color: #ff7a3d;
-}
-
 .empty-box {
   background: white;
   border: 1px solid #eee;
@@ -886,6 +902,15 @@ watch(posts, savePosts, { deep: true })
 @media (max-width: 900px) {
   .form-row {
     flex-direction: column;
+  }
+  .banner-right {
+    float: none;
+    margin-top: 12px;
+    align-items: flex-start;
+  }
+  .activity-cards {
+    flex-direction: column;
+    width: 100%;
   }
 }
 
