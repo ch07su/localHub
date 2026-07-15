@@ -39,10 +39,16 @@
         <p class="detail-content">{{ post.content }}</p>
 
         <div class="action-bar">
-          <button class="edit-btn" @click="showEditForm = !showEditForm">
+          <button class="edit-btn" @click="openEditForm">
             {{ showEditForm ? '수정 취소' : '수정' }}
           </button>
-          <button class="delete-btn" @click="deletePost(post)">삭제</button>
+          <button class="delete-btn" @click="requestDeletePost">삭제</button>
+        </div>
+
+        <div v-if="showDeleteConfirm" class="inline-password-box">
+          <input v-model="deletePassword" type="password" placeholder="비밀번호를 입력하세요" />
+          <button class="submit-btn" @click="confirmDeletePost(post)">삭제 확인</button>
+          
         </div>
 
         <section v-if="showEditForm" class="edit-form">
@@ -60,8 +66,8 @@
             <div class="comment-header">
               <strong>{{ comment.writer }}</strong>
               <div class="comment-actions">
-                <button class="small-btn" @click="startEditComment(comment)">수정</button>
-                <button class="small-btn danger" @click="deleteComment(comment)">삭제</button>
+                <button class="small-btn" @click="requestCommentAction(comment, 'edit')">수정</button>
+                <button class="small-btn danger" @click="requestCommentAction(comment, 'delete')">삭제</button>
               </div>
             </div>
 
@@ -70,10 +76,17 @@
               <textarea v-model="commentDraft"></textarea>
               <button class="small-btn" @click="saveCommentEdit(comment)">저장</button>
             </div>
+
+            <div v-if="passwordCheck.commentId === comment.id" class="inline-password-box">
+              <input v-model="passwordCheck.value" type="password" placeholder="댓글 비밀번호" />
+              <button class="small-btn" @click="confirmPasswordCheck(comment)">확인</button>
+              
+            </div>
           </div>
 
           <div class="comment-form">
             <input v-model="commentWriter" placeholder="댓글 작성자" />
+            <input v-model="commentPassword" type="password" placeholder="비밀번호" />
             <textarea v-model="commentText" rows="3" placeholder="댓글을 입력하세요."></textarea>
             <button class="submit-btn" @click="addComment">댓글 등록</button>
           </div>
@@ -105,9 +118,13 @@ const favorites = ref([])
 const showEditForm = ref(false)
 const editForm = ref({ title: '', password: '', content: '' })
 const commentWriter = ref('')
+const commentPassword = ref('')
 const commentText = ref('')
 const editingCommentId = ref(null)
 const commentDraft = ref('')
+const showDeleteConfirm = ref(false)
+const deletePassword = ref('')
+const passwordCheck = ref({ commentId: null, action: null, value: '' })
 
 function loadPosts() {
   const saved = localStorage.getItem(STORAGE_KEY)
@@ -203,11 +220,23 @@ function toggleFavorite(target) {
   saveFavorites()
 }
 
-function deletePost(target) {
-  const inputPassword = window.prompt('삭제하려면 비밀번호를 입력하세요.')
-  if (!inputPassword) return
+function requestDeletePost() {
+  showDeleteConfirm.value = true
+  deletePassword.value = ''
+}
 
-  if (inputPassword !== target.password) {
+function cancelDeletePost() {
+  showDeleteConfirm.value = false
+  deletePassword.value = ''
+}
+
+function confirmDeletePost(target) {
+  if (!deletePassword.value.trim()) {
+    alert('비밀번호를 입력해주세요.')
+    return
+  }
+
+  if (deletePassword.value !== target.password) {
     alert('비밀번호가 일치하지 않습니다.')
     return
   }
@@ -217,8 +246,19 @@ function deletePost(target) {
   router.push('/community')
 }
 
+function openEditForm() {
+  if (!showEditForm.value && post.value) {
+    editForm.value = {
+      title: post.value.title,
+      password: '',
+      content: post.value.content
+    }
+  }
+  showEditForm.value = !showEditForm.value
+}
+
 function submitEdit() {
-  if (!editForm.value.title || !editForm.value.password || !editForm.value.content) {
+  if (!editForm.value.title.trim() || !editForm.value.password.trim() || !editForm.value.content.trim()) {
     alert('제목, 비밀번호, 내용을 모두 입력해주세요.')
     return
   }
@@ -247,7 +287,10 @@ function submitEdit() {
 
 function addComment() {
   if (!post.value) return
-  if (!commentWriter.value.trim() || !commentText.value.trim()) return
+  if (!commentWriter.value.trim() || !commentPassword.value.trim() || !commentText.value.trim()) {
+    alert('닉네임, 비밀번호, 댓글 내용을 모두 입력해주세요.')
+    return
+  }
 
   posts.value = posts.value.map((item) =>
     item.id === post.value.id
@@ -258,6 +301,7 @@ function addComment() {
             {
               id: Date.now(),
               writer: commentWriter.value.trim(),
+              password: commentPassword.value.trim(),
               text: commentText.value.trim()
             }
           ]
@@ -267,13 +311,47 @@ function addComment() {
 
   post.value = posts.value.find((item) => item.id === post.value.id) || null
   commentWriter.value = ''
+  commentPassword.value = ''
   commentText.value = ''
   savePosts()
 }
 
-function startEditComment(comment) {
-  editingCommentId.value = comment.id
-  commentDraft.value = comment.text
+function requestCommentAction(comment, action) {
+  passwordCheck.value = { commentId: comment.id, action, value: '' }
+}
+
+function cancelPasswordCheck() {
+  passwordCheck.value = { commentId: null, action: null, value: '' }
+}
+
+function confirmPasswordCheck(comment) {
+  if (!passwordCheck.value.value.trim()) {
+    alert('비밀번호를 입력해주세요.')
+    return
+  }
+
+  if (passwordCheck.value.value !== comment.password) {
+    alert('비밀번호가 일치하지 않습니다.')
+    return
+  }
+
+  if (passwordCheck.value.action === 'edit') {
+    editingCommentId.value = comment.id
+    commentDraft.value = comment.text
+  } else if (passwordCheck.value.action === 'delete') {
+    posts.value = posts.value.map((item) =>
+      item.id === post.value.id
+        ? {
+            ...item,
+            comments: (item.comments || []).filter((c) => c.id !== comment.id)
+          }
+        : item
+    )
+    post.value = posts.value.find((item) => item.id === post.value.id) || null
+    savePosts()
+  }
+
+  cancelPasswordCheck()
 }
 
 function saveCommentEdit(comment) {
@@ -294,20 +372,6 @@ function saveCommentEdit(comment) {
   savePosts()
 }
 
-function deleteComment(comment) {
-  posts.value = posts.value.map((item) =>
-    item.id === post.value.id
-      ? {
-          ...item,
-          comments: (item.comments || []).filter((c) => c.id !== comment.id)
-        }
-      : item
-  )
-
-  post.value = posts.value.find((item) => item.id === post.value.id) || null
-  savePosts()
-}
-
 onMounted(() => {
   loadPosts()
   loadFavorites()
@@ -322,30 +386,38 @@ watch(() => route.params.id, () => {
 <style scoped>
 .detail-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f8fbff 0%, #eef6ff 45%, #f5f7ff 100%);
+  background: #ffffff;
 }
 
 .detail-container {
-  max-width: 1100px;
+  max-width: 1000px;
   margin: 0 auto;
-  padding: 40px 20px 80px;
+  padding: 32px 20px 80px;
 }
 
 .back-btn {
-  border: none;
+  border: 1px solid #e3e3e3;
   background: white;
-  padding: 10px 14px;
-  border-radius: 999px;
-  margin-bottom: 20px;
+  color: #555;
+  padding: 9px 16px;
+  border-radius: 8px;
+  margin-bottom: 18px;
   cursor: pointer;
-  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.06);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.back-btn:hover {
+  background: #fafafa;
+  border-color: #ff7a3d;
+  color: #ff7a3d;
 }
 
 .detail-card {
   background: white;
-  border-radius: 24px;
+  border: 1px solid #ebebeb;
+  border-radius: 12px;
   padding: 28px;
-  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
 }
 
 .detail-top {
@@ -353,51 +425,62 @@ watch(() => route.params.id, () => {
   justify-content: space-between;
   align-items: flex-start;
   gap: 12px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.detail-top h1 {
+  font-size: 22px;
+  font-weight: 800;
+  color: #222;
+  margin: 0;
 }
 
 .eyebrow {
-  color: #1d4ed8;
-  font-weight: 800;
-  margin-bottom: 8px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  color: #ff7a3d;
+  font-weight: 700;
+  font-size: 13px;
+  margin-bottom: 6px;
 }
 
 .meta-row {
   display: flex;
-  gap: 12px;
+  gap: 14px;
   flex-wrap: wrap;
-  color: #64748b;
-  margin: 12px 0;
+  color: #999;
+  font-size: 13px;
+  margin: 14px 0;
 }
 
 .tag-list {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin: 10px 0;
+  margin: 10px 0 18px;
 }
 
 .tag-badge {
-  background: #eff6ff;
-  color: #2563eb;
-  padding: 4px 8px;
+  background: #fff3ea;
+  color: #ff7a3d;
+  padding: 4px 9px;
   border-radius: 999px;
   font-size: 12px;
-  font-weight: bold;
+  font-weight: 700;
 }
 
 .detail-image {
   width: 100%;
-  max-height: 260px;
+  max-height: 320px;
   object-fit: cover;
-  border-radius: 18px;
+  border-radius: 10px;
   margin: 12px 0;
 }
 
 .detail-content {
   line-height: 1.7;
-  color: #475569;
+  color: #444;
+  font-size: 15px;
+  padding: 4px 0 20px;
 }
 
 .action-bar,
@@ -415,33 +498,61 @@ watch(() => route.params.id, () => {
 .submit-btn,
 .small-btn {
   border: none;
-  padding: 8px 12px;
-  border-radius: 999px;
+  padding: 8px 14px;
+  border-radius: 8px;
   cursor: pointer;
   font-weight: 700;
+  font-size: 13px;
 }
 
 .like-btn {
-  background: linear-gradient(135deg, #f59e0b, #fbbf24);
+  background: #f59e0b;
   color: white;
 }
 
 .favorite-btn {
-  background: linear-gradient(135deg, #0f766e, #14b8a6);
+  background: #3b82f6;
   color: white;
 }
 
-.edit-btn,
+.edit-btn {
+  background: #f1f1f1;
+  color: #444;
+}
+
 .submit-btn,
 .small-btn {
-  background: linear-gradient(135deg, #2563eb, #3b82f6);
+  background: #ff7a3d;
   color: white;
+}
+
+.submit-btn:hover,
+.small-btn:hover {
+  background: #ef6a2e;
 }
 
 .delete-btn,
 .small-btn.danger {
-  background: linear-gradient(135deg, #dc2626, #ef4444);
+  background: #ef4444;
   color: white;
+}
+
+.action-bar {
+  padding-top: 18px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.inline-password-box {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.inline-password-box input {
+  flex: 1;
+  min-width: 160px;
 }
 
 .edit-form,
@@ -452,22 +563,52 @@ watch(() => route.params.id, () => {
   gap: 8px;
 }
 
+.edit-form {
+  background: #fafafa;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.edit-form h3 {
+  margin: 0 0 4px;
+  font-size: 15px;
+}
+
 input,
 textarea {
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid #dbe4f0;
-  border-radius: 12px;
+  border: 1px solid #e3e3e3;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #333;
+  background: white;
+}
+
+input:focus,
+textarea:focus {
+  outline: none;
+  border-color: #ff7a3d;
 }
 
 .comment-section {
   margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.comment-section h3 {
+  font-size: 16px;
+  margin: 0 0 12px;
+  color: #222;
 }
 
 .comment-item {
-  background: #f8fafc;
-  border-radius: 14px;
-  padding: 12px;
+  background: #fafafa;
+  border: 1px solid #f0f0f0;
+  border-radius: 10px;
+  padding: 12px 14px;
   margin-bottom: 10px;
 }
 
@@ -478,6 +619,12 @@ textarea {
   margin-bottom: 8px;
 }
 
+.comment-item p {
+  color: #555;
+  font-size: 14px;
+  margin: 0;
+}
+
 .comment-edit-box {
   display: flex;
   flex-direction: column;
@@ -486,9 +633,12 @@ textarea {
 
 .empty-box {
   background: white;
+  border: 1px solid #eee;
   padding: 24px;
   text-align: center;
-  border-radius: 14px;
+  border-radius: 10px;
+  color: #888;
+  font-weight: 600;
 }
 
 @media (max-width: 700px) {

@@ -43,16 +43,6 @@
             <option value="행사">행사</option>
             <option value="맛집">맛집</option>
           </select>
-
-          <button
-            v-for="tag in availableTags"
-            :key="tag"
-            class="tag-btn"
-            :class="{ active: selectedTag === tag }"
-            @click="selectedTag = tag"
-          >
-            {{ tag }}
-          </button>
         </div>
       </section>
 
@@ -109,125 +99,42 @@
         </div>
       </section>
 
-      <section class="content-grid">
-        <div class="post-list">
-          <article
-            v-for="post in filteredPosts"
-            :key="post.id"
-            class="post-card"
-            :class="{ active: selectedPost?.id === post.id }"
-            @click="openPostDetail(post)"
-          >
-            <div class="post-meta">
-              <span class="category-badge">{{ post.category }}</span>
-              <span class="region-badge">{{ post.region || '미지정' }}</span>
-              <span>{{ post.createdAt }}</span>
-            </div>
-
-            <img v-if="post.image" :src="post.image" class="post-image" />
-
-            <h3>{{ post.title }}</h3>
-            <p>{{ post.content }}</p>
-
-            <div class="tag-list">
-              <span v-for="tag in post.tags" :key="tag" class="tag-badge">{{ tag }}</span>
-            </div>
-
-            <div class="post-footer">
-              <span>작성자 {{ post.writer }}</span>
-              <span>조회 {{ post.views }}</span>
-              <span>추천 {{ post.likes }}</span>
-            </div>
-
-            <div class="card-actions">
-              <button class="detail-link" @click.stop="openPostDetail(post)">상세 보기</button>
-            </div>
-          </article>
-
-          <div v-if="filteredPosts.length === 0" class="empty-box">
-            검색 결과가 없습니다.
-          </div>
+      <section class="post-list">
+        <div class="table-wrapper">
+          <table class="post-table">
+            <thead>
+              <tr>
+                <th class="col-no">번호</th>
+                <th class="col-title">제목</th>
+                <th class="col-writer">작성자</th>
+                <th class="col-region">지역</th>
+                <th class="col-date">작성일</th>
+                <th class="col-views">조회</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="(post, index) in filteredPosts"
+                :key="post.id"
+                @click="openPostDetail(post)"
+              >
+                <td class="col-no">{{ filteredPosts.length - index }}</td>
+                <td class="col-title">
+                  <span class="category-chip">{{ post.category }}</span>
+                  <span class="title-text">{{ post.title }}</span>
+                </td>
+                <td class="col-writer">{{ post.writer }}</td>
+                <td class="col-region">{{ post.region || '미지정' }}</td>
+                <td class="col-date">{{ post.createdAt }}</td>
+                <td class="col-views">{{ post.views }}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
 
-        <aside class="detail-panel">
-          <div v-if="selectedPost" class="detail-box">
-            <div class="detail-top">
-              <div>
-                <p class="detail-label">선택된 게시글</p>
-                <h2>{{ selectedPost.title }}</h2>
-              </div>
-
-              <button class="like-btn" @click="toggleLike(selectedPost)">
-                {{ selectedPost.likedByMe ? '추천 취소' : '추천' }} {{ selectedPost.likes }}
-              </button>
-            </div>
-
-            <div class="detail-meta">
-              <span>{{ selectedPost.region }}</span>
-              <span>{{ selectedPost.category }}</span>
-              <span>{{ selectedPost.createdAt }}</span>
-            </div>
-
-            <div class="tag-list">
-              <span v-for="tag in selectedPost.tags" :key="tag" class="tag-badge">{{ tag }}</span>
-            </div>
-
-            <img v-if="selectedPost.image" :src="selectedPost.image" class="detail-image" />
-
-            <p class="detail-content">{{ selectedPost.content }}</p>
-
-            <div class="detail-actions">
-              <button class="favorite-btn" @click="toggleFavorite(selectedPost)">
-                {{ isFavorite(selectedPost.id) ? '관심 해제' : '관심 등록' }}
-              </button>
-              <button class="edit-btn" @click="startEdit(selectedPost)">수정</button>
-              <button class="delete-btn" @click="deletePost(selectedPost)">삭제</button>
-              <button class="detail-link" @click="openPostDetail(selectedPost)">상세 페이지</button>
-            </div>
-
-            <div class="favorite-section">
-              <h3>관심 게시글</h3>
-              <ul>
-                <li
-                  v-for="favoritePost in favoritePosts"
-                  :key="favoritePost.id"
-                  @click="selectPost(favoritePost)"
-                >
-                  {{ favoritePost.title }}
-                </li>
-              </ul>
-            </div>
-
-            <div class="comment-section">
-              <div class="comment-card">
-                <div class="comment-header">
-                  <div>
-                    <p class="comment-eyebrow">소통하기</p>
-                    <h3>댓글 남기기</h3>
-                  </div>
-                  <span class="comment-count">{{ selectedPost.comments.length }}개</span>
-                </div>
-
-                <div class="comment-form">
-                  <div class="comment-input-row">
-                    <input v-model="commentWriter" placeholder="닉네임" />
-                    <button class="submit-btn" @click="addComment">댓글 등록</button>
-                  </div>
-                  <textarea v-model="commentText" rows="3" placeholder="여러분의 의견을 남겨주세요."></textarea>
-                </div>
-              </div>
-
-              <div v-for="comment in selectedPost.comments" :key="comment.id" class="comment-item">
-                <strong>{{ comment.writer }}</strong>
-                <p>{{ comment.text }}</p>
-              </div>
-            </div>
-          </div>
-
-          <div v-else class="empty-box">
-            게시글을 선택해 주세요.
-          </div>
-        </aside>
+        <div v-if="filteredPosts.length === 0" class="empty-box">
+          검색 결과가 없습니다.
+        </div>
       </section>
     </main>
 
@@ -624,94 +531,75 @@ watch(posts, savePosts, { deep: true })
 <style scoped>
 .board-page {
   min-height: 100vh;
-  background: #f7f9fc;
+  background: #ffffff;
 }
 
 .board-container {
   max-width: 1300px;
   margin: 0 auto;
-  padding: 40px 20px 80px;
+  padding: 32px 20px 80px;
 }
 
 .board-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .eyebrow {
-  color: #42b883;
-  font-weight: bold;
+  color: #ff7a3d;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.04em;
   margin-bottom: 6px;
 }
 
 .board-header h1 {
-  font-size: 32px;
-  margin: 0 0 8px;
+  font-size: 26px;
+  font-weight: 800;
+  color: #222;
+  margin: 0 0 6px;
 }
 
 .board-header p {
-  color: #666;
+  color: #888;
+  font-size: 14px;
   margin: 0;
 }
 
 .write-btn,
 .submit-btn,
-.like-btn,
-.favorite-btn,
-.edit-btn,
-.delete-btn,
-.cancel-btn,
-.detail-link {
+.cancel-btn {
   border: none;
-  padding: 10px 14px;
-  border-radius: 10px;
+  padding: 9px 18px;
+  border-radius: 8px;
   cursor: pointer;
-  font-weight: bold;
+  font-weight: 700;
+  font-size: 14px;
 }
 
 .write-btn,
 .submit-btn {
-  background: #42b883;
+  background: #ff7a3d;
   color: white;
+}
+
+.write-btn:hover,
+.submit-btn:hover {
+  background: #ef6a2e;
 }
 
 .cancel-btn {
-  background: #eee;
-  color: #333;
-}
-
-.like-btn {
-  background: #ff8a00;
-  color: white;
-}
-
-.favorite-btn {
-  background: #3b82f6;
-  color: white;
-}
-
-.edit-btn {
-  background: #f59e0b;
-  color: white;
-}
-
-.delete-btn {
-  background: #ef4444;
-  color: white;
-}
-
-.detail-link {
-  background: #0f172a;
-  color: white;
+  background: #f1f1f1;
+  color: #444;
 }
 
 .toolbar {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 20px;
+  gap: 10px;
+  margin-bottom: 18px;
 }
 
 .toolbar input,
@@ -719,10 +607,21 @@ watch(posts, savePosts, { deep: true })
 .write-form select,
 .write-form textarea {
   width: 100%;
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 10px;
+  padding: 10px 12px;
+  border: 1px solid #e3e3e3;
+  border-radius: 8px;
   font-size: 14px;
+  color: #333;
+  background: white;
+}
+
+.toolbar input:focus,
+.write-form input:focus,
+.write-form select:focus,
+.write-form textarea:focus,
+.filter-group select:focus {
+  outline: none;
+  border-color: #ff7a3d;
 }
 
 .toolbar input {
@@ -736,26 +635,21 @@ watch(posts, savePosts, { deep: true })
   gap: 8px;
 }
 
-.filter-group select,
-.tag-btn {
-  border: 1px solid #ddd;
+.filter-group select {
+  border: 1px solid #e3e3e3;
   background: white;
-  padding: 8px 12px;
-  border-radius: 999px;
+  padding: 9px 12px;
+  border-radius: 8px;
   cursor: pointer;
-}
-
-.tag-btn.active {
-  background: #42b883;
-  color: white;
-  border-color: #42b883;
+  font-size: 14px;
+  color: #333;
 }
 
 .write-form {
   background: white;
   padding: 20px;
-  border-radius: 16px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  border: 1px solid #eee;
   margin-bottom: 24px;
 }
 
@@ -765,8 +659,7 @@ watch(posts, savePosts, { deep: true })
   margin-bottom: 12px;
 }
 
-.form-actions,
-.detail-actions {
+.form-actions {
   display: flex;
   gap: 10px;
   margin-top: 12px;
@@ -778,20 +671,12 @@ watch(posts, savePosts, { deep: true })
   margin-top: 10px;
 }
 
-.preview-image,
-.post-image,
-.detail-image {
+.preview-image {
   width: 100%;
   max-height: 220px;
   object-fit: cover;
-  border-radius: 12px;
+  border-radius: 10px;
   margin-top: 12px;
-}
-
-.content-grid {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 20px;
 }
 
 .post-list {
@@ -800,269 +685,114 @@ watch(posts, savePosts, { deep: true })
   gap: 12px;
 }
 
-.post-card {
+.table-wrapper {
   background: white;
-  border-radius: 14px;
-  padding: 18px;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  border: 1px solid #eee;
+  border: 1px solid #ebebeb;
+  border-radius: 10px;
+  overflow: hidden;
 }
 
-.post-card.active {
-  border-color: #42b883;
-  box-shadow: 0 0 0 2px rgba(66, 184, 131, 0.2);
+.post-table {
+  width: 100%;
+  border-collapse: collapse;
 }
 
-.post-meta,
-.post-footer,
-.detail-meta {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  font-size: 13px;
+.post-table thead th {
+  background: #fafafa;
   color: #777;
-  margin-bottom: 8px;
-  flex-wrap: wrap;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 13px 10px;
+  border-bottom: 1px solid #ebebeb;
+  text-align: center;
+  white-space: nowrap;
 }
 
-.tag-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 10px 0;
+.post-table thead th.col-title {
+  text-align: left;
+  padding-left: 16px;
 }
 
-.tag-badge {
-  background: #eefaf4;
-  color: #2f8f63;
-  padding: 4px 8px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: bold;
+.post-table tbody td {
+  padding: 13px 10px;
+  border-bottom: 1px solid #f2f2f2;
+  font-size: 14px;
+  color: #333;
+  text-align: center;
 }
 
-.category-badge,
-.region-badge {
-  padding: 4px 8px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: bold;
-}
-
-.category-badge {
-  background: #e0f2fe;
-  color: #0369a1;
-}
-
-.region-badge {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-.post-card h3 {
-  margin: 6px 0;
-}
-
-.post-card p {
-  color: #555;
-  margin: 0;
-}
-
-.card-actions {
-  margin-top: 12px;
-}
-
-.detail-panel {
-  min-width: 0;
-}
-
-.detail-box {
-  background: white;
-  border-radius: 14px;
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-.detail-label {
-  color: #42b883;
-  font-weight: bold;
-  margin-bottom: 8px;
-}
-
-.detail-top {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  align-items: flex-start;
-}
-
-.detail-content {
-  color: #555;
-  line-height: 1.6;
-  margin-top: 12px;
-}
-
-.favorite-section {
-  margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px solid #eee;
-}
-
-.favorite-section ul {
-  padding-left: 18px;
-}
-
-.favorite-section li {
-  margin-bottom: 8px;
+.post-table tbody tr {
   cursor: pointer;
-  color: #2563eb;
+  transition: background 0.15s ease;
 }
 
-.comment-section {
-  margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px solid #eee;
+.post-table tbody tr:hover {
+  background: #fafafa;
 }
 
-.comment-card {
-  background: linear-gradient(135deg, #f8fffb 0%, #f6fbff 100%);
-  border: 1px solid #e3f5ea;
-  border-radius: 16px;
-  padding: 14px;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
-  margin-bottom: 12px;
+.post-table tbody tr:last-child td {
+  border-bottom: none;
 }
 
-.comment-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
+.col-no {
+  width: 60px;
+  color: #999;
 }
 
-.comment-eyebrow {
-  color: #42b883;
-  font-size: 12px;
+.col-title {
+  text-align: left;
+  padding-left: 16px !important;
+  font-weight: 500;
+}
+
+.col-writer,
+.col-region,
+.col-date,
+.col-views {
+  width: 100px;
+  color: #666;
+  font-size: 13px;
+}
+
+.category-chip {
+  display: inline-block;
+  background: #eef2f7;
+  color: #4b5a6b;
+  font-size: 11px;
   font-weight: 700;
-  margin: 0 0 2px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  margin-right: 8px;
 }
 
-.comment-header h3 {
-  margin: 0;
-  font-size: 16px;
+.title-text {
+  color: #222;
 }
 
-.comment-count {
-  background: #ecfdf3;
-  color: #2f8f63;
-  padding: 6px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.comment-form {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  width: 100%;
-  max-width: 420px;
-}
-
-.comment-input-row {
-  display: flex;
-  gap: 8px;
-  width: 100%;
-}
-
-.comment-input-row input {
-  flex: 1;
-  min-width: 0;
-  border: 1px solid #dcefe4;
-  border-radius: 999px;
-  padding: 10px 14px;
-  background: rgba(255, 255, 255, 0.95);
-  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
-}
-
-.comment-form textarea {
-  width: 100%;
-  max-width: 330px;
-  resize: vertical;
-  min-height: 88px;
-  border: 1px solid #dcefe4;
-  border-radius: 16px;
-  padding: 12px 14px;
-  background: rgba(255, 255, 255, 0.95);
-  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
-}
-
-.comment-form .submit-btn {
-  flex-shrink: 0;
-  align-self: flex-end;
-  border-radius: 999px;
-  padding: 10px 14px;
-  background: linear-gradient(135deg, #42b883, #2f8f63);
-  color: white;
-  box-shadow: 0 6px 14px rgba(66, 184, 131, 0.2);
-}
-
-.comment-input-row input:focus,
-.comment-form textarea:focus {
-  border-color: #42b883;
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(66, 184, 131, 0.16);
-}
-
-.comment-form textarea {
-  resize: vertical;
-  min-height: 88px;
-}
-
-.comment-form .submit-btn {
-  align-self: flex-end;
-  border-radius: 999px;
-  padding: 10px 14px;
-  background: linear-gradient(135deg, #42b883, #2f8f63);
-  color: white;
-  box-shadow: 0 6px 14px rgba(66, 184, 131, 0.2);
-}
-
-.comment-form .submit-btn:hover {
-  transform: translateY(-1px);
-}
-
-.comment-item {
-  background: #f9fafb;
-  padding: 10px 12px;
-  border-radius: 12px;
-  margin-bottom: 10px;
-  border: 1px solid #eef2f7;
+.post-table tbody tr:hover .title-text {
+  color: #ff7a3d;
 }
 
 .empty-box {
-  background: linear-gradient(135deg, #f8fffb 0%, #f6fbff 100%);
-  border: 1px solid #e3f5ea;
-  border-radius: 16px;
+  background: white;
+  border: 1px solid #eee;
+  border-radius: 10px;
   padding: 20px;
-  color: #5b6b7a;
+  color: #888;
   text-align: center;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
   font-weight: 600;
 }
 
 @media (max-width: 900px) {
-  .content-grid {
-    grid-template-columns: 1fr;
-  }
-
   .form-row {
     flex-direction: column;
   }
+}
 
-  .detail-top {
-    flex-direction: column;
+@media (max-width: 640px) {
+  .col-writer,
+  .col-date {
+    display: none;
   }
 }
 </style>
