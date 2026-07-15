@@ -42,12 +42,19 @@
           <button class="edit-btn" @click="openEditForm">
             {{ showEditForm ? '수정 취소' : '수정' }}
           </button>
-          <button class="delete-btn" @click="deletePost(post)">삭제</button>
+          <button class="delete-btn" @click="requestDeletePost">삭제</button>
+        </div>
+
+        <div v-if="showDeleteConfirm" class="inline-password-box">
+          <input v-model="deletePassword" type="password" placeholder="비밀번호를 입력하세요" />
+          <button class="submit-btn" @click="confirmDeletePost(post)">삭제 확인</button>
+          
         </div>
 
         <section v-if="showEditForm" class="edit-form">
           <h3>게시글 수정</h3>
           <input v-model="editForm.title" placeholder="제목" />
+          <input v-model="editForm.password" type="password" placeholder="비밀번호" />
           <textarea v-model="editForm.content" rows="5" placeholder="내용"></textarea>
           <button class="submit-btn" @click="submitEdit">수정하기</button>
         </section>
@@ -59,8 +66,8 @@
             <div class="comment-header">
               <strong>{{ comment.writer }}</strong>
               <div class="comment-actions">
-                <button class="small-btn" @click="startEditComment(comment)">수정</button>
-                <button class="small-btn danger" @click="deleteComment(comment)">삭제</button>
+                <button class="small-btn" @click="requestCommentAction(comment, 'edit')">수정</button>
+                <button class="small-btn danger" @click="requestCommentAction(comment, 'delete')">삭제</button>
               </div>
             </div>
 
@@ -69,10 +76,17 @@
               <textarea v-model="commentDraft"></textarea>
               <button class="small-btn" @click="saveCommentEdit(comment)">저장</button>
             </div>
+
+            <div v-if="passwordCheck.commentId === comment.id" class="inline-password-box">
+              <input v-model="passwordCheck.value" type="password" placeholder="댓글 비밀번호" />
+              <button class="small-btn" @click="confirmPasswordCheck(comment)">확인</button>
+              
+            </div>
           </div>
 
           <div class="comment-form">
             <input v-model="commentWriter" placeholder="댓글 작성자" />
+            <input v-model="commentPassword" type="password" placeholder="비밀번호" />
             <textarea v-model="commentText" rows="3" placeholder="댓글을 입력하세요."></textarea>
             <button class="submit-btn" @click="addComment">댓글 등록</button>
           </div>
@@ -102,11 +116,15 @@ const posts = ref([])
 const post = ref(null)
 const favorites = ref([])
 const showEditForm = ref(false)
-const editForm = ref({ title: '', content: '' })
+const editForm = ref({ title: '', password: '', content: '' })
 const commentWriter = ref('')
+const commentPassword = ref('')
 const commentText = ref('')
 const editingCommentId = ref(null)
 const commentDraft = ref('')
+const showDeleteConfirm = ref(false)
+const deletePassword = ref('')
+const passwordCheck = ref({ commentId: null, action: null, value: '' })
 
 function loadPosts() {
   const saved = localStorage.getItem(STORAGE_KEY)
@@ -202,9 +220,26 @@ function toggleFavorite(target) {
   saveFavorites()
 }
 
-function deletePost(target) {
-  const confirmed = window.confirm('정말 삭제하시겠습니까?')
-  if (!confirmed) return
+function requestDeletePost() {
+  showDeleteConfirm.value = true
+  deletePassword.value = ''
+}
+
+function cancelDeletePost() {
+  showDeleteConfirm.value = false
+  deletePassword.value = ''
+}
+
+function confirmDeletePost(target) {
+  if (!deletePassword.value.trim()) {
+    alert('비밀번호를 입력해주세요.')
+    return
+  }
+
+  if (deletePassword.value !== target.password) {
+    alert('비밀번호가 일치하지 않습니다.')
+    return
+  }
 
   posts.value = posts.value.filter((item) => item.id !== target.id)
   savePosts()
@@ -215,6 +250,7 @@ function openEditForm() {
   if (!showEditForm.value && post.value) {
     editForm.value = {
       title: post.value.title,
+      password: '',
       content: post.value.content
     }
   }
@@ -222,12 +258,15 @@ function openEditForm() {
 }
 
 function submitEdit() {
-  if (!editForm.value.title.trim() || !editForm.value.content.trim()) {
-    alert('제목과 내용을 모두 입력해주세요.')
+  if (!editForm.value.title.trim() || !editForm.value.password.trim() || !editForm.value.content.trim()) {
+    alert('제목, 비밀번호, 내용을 모두 입력해주세요.')
     return
   }
 
-  if (!post.value) return
+  if (!post.value || editForm.value.password !== post.value.password) {
+    alert('비밀번호가 일치하지 않습니다.')
+    return
+  }
 
   posts.value = posts.value.map((item) =>
     item.id === post.value.id
@@ -242,14 +281,14 @@ function submitEdit() {
   post.value = posts.value.find((item) => item.id === post.value.id) || null
   savePosts()
   showEditForm.value = false
-  editForm.value = { title: '', content: '' }
+  editForm.value = { title: '', password: '', content: '' }
   alert('게시글이 수정되었습니다.')
 }
 
 function addComment() {
   if (!post.value) return
-  if (!commentWriter.value.trim() || !commentText.value.trim()) {
-    alert('닉네임과 댓글 내용을 모두 입력해주세요.')
+  if (!commentWriter.value.trim() || !commentPassword.value.trim() || !commentText.value.trim()) {
+    alert('닉네임, 비밀번호, 댓글 내용을 모두 입력해주세요.')
     return
   }
 
@@ -262,6 +301,7 @@ function addComment() {
             {
               id: Date.now(),
               writer: commentWriter.value.trim(),
+              password: commentPassword.value.trim(),
               text: commentText.value.trim()
             }
           ]
@@ -271,13 +311,47 @@ function addComment() {
 
   post.value = posts.value.find((item) => item.id === post.value.id) || null
   commentWriter.value = ''
+  commentPassword.value = ''
   commentText.value = ''
   savePosts()
 }
 
-function startEditComment(comment) {
-  editingCommentId.value = comment.id
-  commentDraft.value = comment.text
+function requestCommentAction(comment, action) {
+  passwordCheck.value = { commentId: comment.id, action, value: '' }
+}
+
+function cancelPasswordCheck() {
+  passwordCheck.value = { commentId: null, action: null, value: '' }
+}
+
+function confirmPasswordCheck(comment) {
+  if (!passwordCheck.value.value.trim()) {
+    alert('비밀번호를 입력해주세요.')
+    return
+  }
+
+  if (passwordCheck.value.value !== comment.password) {
+    alert('비밀번호가 일치하지 않습니다.')
+    return
+  }
+
+  if (passwordCheck.value.action === 'edit') {
+    editingCommentId.value = comment.id
+    commentDraft.value = comment.text
+  } else if (passwordCheck.value.action === 'delete') {
+    posts.value = posts.value.map((item) =>
+      item.id === post.value.id
+        ? {
+            ...item,
+            comments: (item.comments || []).filter((c) => c.id !== comment.id)
+          }
+        : item
+    )
+    post.value = posts.value.find((item) => item.id === post.value.id) || null
+    savePosts()
+  }
+
+  cancelPasswordCheck()
 }
 
 function saveCommentEdit(comment) {
@@ -295,20 +369,6 @@ function saveCommentEdit(comment) {
   post.value = posts.value.find((item) => item.id === post.value.id) || null
   editingCommentId.value = null
   commentDraft.value = ''
-  savePosts()
-}
-
-function deleteComment(comment) {
-  posts.value = posts.value.map((item) =>
-    item.id === post.value.id
-      ? {
-          ...item,
-          comments: (item.comments || []).filter((c) => c.id !== comment.id)
-        }
-      : item
-  )
-
-  post.value = posts.value.find((item) => item.id === post.value.id) || null
   savePosts()
 }
 
@@ -480,6 +540,19 @@ watch(() => route.params.id, () => {
 .action-bar {
   padding-top: 18px;
   border-top: 1px solid #f0f0f0;
+}
+
+.inline-password-box {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.inline-password-box input {
+  flex: 1;
+  min-width: 160px;
 }
 
 .edit-form,
