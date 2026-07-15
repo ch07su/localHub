@@ -15,6 +15,23 @@
     <h4>LocalHub AI 도우미</h4>
     <button class="close-btn" @click="isChatOpen = false">X</button>
   </div>
+      <div class="category-buttons">
+        <button
+          v-for="category in ['전체', '관광지', '레포츠', '문화시설', '쇼핑', '숙박']"
+          :key="category"
+          :class="[
+            'category-btn',
+            selectedCategory === (category === '전체' ? 'all' : category)
+              ? 'active'
+              : ''
+          ]"
+          @click="
+            selectedCategory = category === '전체' ? 'all' : category
+          "
+        >
+          {{ category }}
+        </button>
+      </div>
 
       <div class="chat-box" ref="chatBox">
         <div 
@@ -48,6 +65,8 @@ import seoulCulture from './data/서울_문화시설.json';
 import seoulShopping from './data/서울_쇼핑.json';
 import seoulLodging from './data/서울_숙박.json';
 
+const selectedCategory = ref('all')
+
 const isChatOpen = ref(false);
 
 const seoulData = {
@@ -59,7 +78,7 @@ const seoulData = {
 };
 
 const messages = ref([
-  { sender: 'bot', text: '안녕하세요! 서울 지역 정보 AI 도우미입니다. 관광지, 레포츠, 문화시설, 쇼핑, 숙박 정보에 대해 무엇이든 물어보세요!' }
+  { sender: 'bot', text: '안녕하세요! 서울 지역 정보 AI 도우미입니다. 위 카테고리를 먼저 선택하시면 더 빠르고 정확한 답변을 받을 수 있어요!' }
 ]);
 const input = ref('');
 const chatBox = ref(null);
@@ -84,20 +103,11 @@ const sendMessage = async () => {
 
   // 2. [최적화] 사용자의 질문에 맞춰서 필요한 파일 데이터만 선별하여 보냅니다 (토큰 절약 및 에러 방지)
   let contextData = {};
-  if (userQuery.includes('관광') || userQuery.includes('갈만') || userQuery.includes('명소')) {
-    contextData['관광지'] = seoulData.관광지;
-  }
-  if (userQuery.includes('레포츠') || userQuery.includes('운동') || userQuery.includes('스포츠') || userQuery.includes('액티비티')) {
-    contextData['레포츠'] = seoulData.레포츠;
-  }
-  if (userQuery.includes('문화') || userQuery.includes('미술관') || userQuery.includes('박물관') || userQuery.includes('전시')) {
-    contextData['문화시설'] = seoulData.문화시설;
-  }
-  if (userQuery.includes('쇼핑') || userQuery.includes('시장') || userQuery.includes('마트') || userQuery.includes('백화점')) {
-    contextData['쇼핑'] = seoulData.쇼핑;
-  }
-  if (userQuery.includes('숙박') || userQuery.includes('호텔') || userQuery.includes('펜션') || userQuery.includes('모텔') || userQuery.includes('게하')) {
-    contextData['숙박'] = seoulData.숙박;
+
+  if (selectedCategory.value === 'all') {
+    contextData = seoulData
+  } else {
+    contextData[selectedCategory.value] = seoulData[selectedCategory.value]
   }
 
   // 특별한 키워드가 없다면 질문 답변의 퀄리티를 위해 전체 데이터를 가볍게 요약해서 보냅니다.
@@ -117,10 +127,12 @@ const sendMessage = async () => {
         messages: [
           { 
             role: 'system', 
-            content: `당신은 서울 종합 지역 가이드 AI입니다. 
-            오직 아래 제공된 [서울 데이터]만을 기반으로 사실에 기반하여 답변해 주세요. 
-            데이터에 없는 장소나 억측은 절대로 답변하지 말고 정중하게 모른다고 대답해 주세요.
-            사용자가 읽기 편하도록 가독성 좋게 줄바꿈을 섞어 답변하세요.
+            content: `당신은 서울 지역 장소 이름 검색 전문 AI입니다.
+                      사용자가 장소 이름을 묻기 전에는 상세 정보를 제공하지 마세요.
+                      질문이 장소 추천/검색 관련이면, 우선 장소 이름만 목록으로 제시해 주세요. ,를 넣어 구분하고, 각 장소 이름은 한 줄씩 줄바꿈해서 보여주세요.
+                      사용자가 추가로 상세 정보를 요청하면 그때 주소, 전화번호, 설명 등을 알려주세요.
+                      데이터에 없는 장소나 억측은 절대로 답변하지 말고 정중하게 모른다고 대답해 주세요.
+                      오직 아래 제공된 [서울 데이터]만 참고하여 답변하고, 데이터에 없으면 모른다고 대답하세요.
             
             [서울 데이터]
             ${JSON.stringify(contextData)}` 
@@ -154,7 +166,7 @@ const scrollToBottom = () => {
 </script>
 
 <style scoped>
-/* 화면 레이아웃 방해 없이 우측 하단에 고정시키는 스타일 (모바일 반응형 탑재) */
+
 .open-chat-btn {
   position: fixed;
   bottom: 24px;
@@ -282,6 +294,40 @@ const scrollToBottom = () => {
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
   font-size: 18px;
+}
+
+.category-buttons {
+  display: flex;
+  flex-wrap: nowrap;        
+  overflow-x: auto;         
+  gap: 8px;
+  padding: 10px;
+  background: #fff;
+  border-bottom: 1px solid #eee;
+  
+
+  -webkit-overflow-scrolling: touch; 
+}
+
+.category-btn {
+  flex-shrink: 0;            /* 중요: 가로 공간이 부족해도 버튼 크기가 줄어들지 않음 */
+  padding: 8px 14px;
+  border: 1px solid #ff5a22;
+  border-radius: 20px;
+  background: white;
+  color: #ff5a22;
+  cursor: pointer;
+  font-size: 13px;
+  transition: 0.2s;
+}
+
+.category-btn:hover {
+  background: #fff3ee;
+}
+
+.category-btn.active {
+  background: #ff5a22;
+  color: white;
 }
 
 input { flex: 1; border: none; padding: 15px; outline: none; font-size: 13px; }

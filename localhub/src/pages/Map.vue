@@ -17,17 +17,17 @@
         </div>
 
         <div class="select-row">
-          <select v-model="currentCategory" @change="handleCategoryChange" class="filter-select">
-            <option value="all">전체 카테고리</option>
-            <option v-for="tab in categoryTabs" :key="tab.id" :value="tab.id">
-              {{ tab.name }}
-            </option>
-          </select>
-
           <select v-model="selectedDistrict" @change="handleDistrictChange" class="filter-select">
             <option value="all">지역 선택 (전체)</option>
             <option v-for="district in districts" :key="district" :value="district">
               {{ district }}
+            </option>
+          </select>
+
+          <select v-model="currentCategory" @change="handleCategoryChange" class="filter-select">
+            <option value="none">카테고리를 선택하세요</option>
+            <option v-for="tab in categoryTabs" :key="tab.id" :value="tab.id">
+              {{ tab.name }}
             </option>
           </select>
         </div>
@@ -105,7 +105,7 @@ const categoryTabs = [
   { id: 'accommodation', name: '숙박', data: accommodationData }
 ]
 
-const currentCategory = ref('all')
+const currentCategory = ref('none')
 const selectedDistrict = ref('all')
 const searchQuery = ref('')
 
@@ -144,18 +144,20 @@ const getCategoryClass = (item) => {
 }
 
 const rawList = computed(() => {
+  if (currentCategory.value === 'none') return []
+
   if (currentCategory.value !== 'all') {
     const activeTab = categoryTabs.find(tab => tab.id === currentCategory.value)
     return activeTab && activeTab.data && activeTab.data.items ? activeTab.data.items : []
-  } else {
-    let combined = []
-    categoryTabs.forEach(tab => {
-      if (tab.data && tab.data.items) {
-        combined = [...combined, ...tab.data.items]
-      }
-    })
-    return combined
   }
+
+  let combined = []
+  categoryTabs.forEach(tab => {
+    if (tab.data && tab.data.items) {
+      combined = [...combined, ...tab.data.items]
+    }
+  })
+  return combined
 })
 
 const filteredList = computed(() => {
@@ -187,6 +189,7 @@ const initMap = () => {
   mapInstance = new kakao.maps.Map(container, options)
 
   updateMarkers()
+  if (currentCategory.value === 'none') return
 }
 
 const updateMarkers = () => {
@@ -213,7 +216,11 @@ const updateMarkers = () => {
 
       const content = `
         <div class="map-overlay-card">
-          <img src="${f.firstimage || 'https://via.placeholder.com/150?text=No+Image'}" class="overlay-img">
+          <img
+            src="${f.firstimage || ''}"
+            class="overlay-img"
+            onerror="this.onerror=null; this.src=''; this.style.background='#eeeeee';"
+          >
           <h4 class="overlay-title">${f.title || '제목 없음'}</h4>
           <p class="overlay-addr">${f.addr1 || ''}</p>
         </div>
@@ -376,7 +383,7 @@ onMounted(() => {
 
 .kakao-map {
   width: 100%;
-  height: 50vh;
+  height: 70vh;
 }
 
 .list-section {
@@ -547,6 +554,7 @@ onMounted(() => {
   object-fit: cover;
   border-radius: 6px;
   margin-bottom: 8px;
+  background: #eeeeee;
 }
 
 :deep(.overlay-title) {
