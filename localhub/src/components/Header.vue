@@ -14,7 +14,7 @@
       </RouterLink>
 
       <RouterLink to="/recommend">
-        추천
+        챗봇
       </RouterLink>
     </nav>
 
