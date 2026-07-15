@@ -6,12 +6,10 @@
       <!-- Banner: title + write button + tabs -->
       <section class="board-header banner">
         <div class="banner-left">
-          
-<div class="banner-left">
-
-  <h1>서울잇다</h1>
-  <p>추천 장소, 맛집, 축제 정보와 경험을 나누세요.</p>
-</div>
+          <div class="banner-left">
+            <h1>서울잇다</h1>
+            <p>추천 장소, 맛집, 축제 정보와 경험을 나누세요.</p>
+          </div>
         </div>
 
         <div class="banner-right">
@@ -78,7 +76,30 @@
         </div>
       </section>
 
-      <!-- write form -->
+      <div class="sort-group">
+        <button
+          type="button"
+          :class="{ active: selectedSort === 'latest' }"
+          @click="selectedSort = 'latest'"
+        >
+          최신순
+        </button>
+        <button
+          type="button"
+          :class="{ active: selectedSort === 'views' }"
+          @click="selectedSort = 'views'"
+        >
+          조회순
+        </button>
+        <button
+          type="button"
+          :class="{ active: selectedSort === 'likes' }"
+          @click="selectedSort = 'likes'"
+        >
+          추천순
+        </button>
+      </div>
+
       <section v-if="showForm" class="write-form">
         <h2>{{ isEditing ? '게시글 수정' : '새 글 작성' }}</h2>
 
@@ -137,15 +158,16 @@
                 <th class="col-region">지역</th>
                 <th class="col-date">작성일</th>
                 <th class="col-views">조회</th>
+                <th class="col-likes">추천</th>
               </tr>
             </thead>
             <tbody>
               <tr
-                v-for="(post, index) in filteredPosts"
+                v-for="(post, index) in sortedPosts"
                 :key="post.id"
                 @click="openPostDetail(post)"
               >
-                <td class="col-no">{{ filteredPosts.length - index }}</td>
+                <td class="col-no">{{ sortedPosts.length - index }}</td>
                 <td class="col-title">
                   <span class="category-chip">{{ post.category }}</span>
                   <span class="title-text">{{ post.title }}</span>
@@ -154,12 +176,13 @@
                 <td class="col-region">{{ post.region || '미지정' }}</td>
                 <td class="col-date">{{ post.createdAt }}</td>
                 <td class="col-views">{{ post.views }}</td>
+                <td class="col-likes">{{ post.likes }}</td>
               </tr>
             </tbody>
           </table>
         </div>
 
-        <div v-if="filteredPosts.length === 0" class="empty-box">
+        <div v-if="sortedPosts.length === 0" class="empty-box">
           검색 결과가 없습니다.
         </div>
       </section>
@@ -171,13 +194,15 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import Header from '../components/Header.vue'
 import Footer from '../components/Footer.vue'
 
 const STORAGE_KEY = 'localhub-posts'
 const FAVORITES_KEY = 'localhub-favorites'
 const router = useRouter()
+const route = useRoute()
+const selectedSort = ref('latest')
 
 const regionOptions = [
   '종로구','중구','용산구','성동구','광진구','동대문구','중랑구','성북구','강북구','도봉구',
@@ -199,7 +224,7 @@ const defaultPosts = [
     writer: '익명',
     password: '1234',
     region: '성동구',
-    category: '공지사항',
+    category: '자유게시판',
     content: '성수동에서 가볼 만한 맛집을 소개합니다.',
     createdAt: '2026-07-14',
     views: 12,
@@ -231,7 +256,7 @@ const defaultPosts = [
     writer: '김철수',
     password: '2222',
     region: '강남구',
-    category: 'Q&A',
+    category: '자유게시판',
     content: '이번 주 진행되는 지역 축제 정보를 정리했습니다.',
     createdAt: '2026-07-12',
     views: 15,
@@ -247,7 +272,7 @@ const posts = ref([])
 const favorites = ref([])
 const searchQuery = ref('')
 const selectedRegion = ref('전체')
-const selectedCategory = ref('주제') // topic selector (separate from board tab)
+const selectedCategory = ref('주제')
 const selectedTag = ref('전체')
 const selectedBoardTab = ref('all')
 const showForm = ref(false)
@@ -365,6 +390,30 @@ const filteredPosts = computed(() => {
     return matchRegion && matchBoardTab && matchCategory && matchTag && matchQuery
   })
 })
+
+const sortedPosts = computed(() => {
+  const postsCopy = filteredPosts.value.slice()
+
+  if (selectedSort.value === 'views') {
+    return postsCopy.sort((a, b) => (b.views || 0) - (a.views || 0))
+  }
+
+  if (selectedSort.value === 'likes') {
+    return postsCopy.sort((a, b) => (b.likes || 0) - (a.likes || 0))
+  }
+
+  return postsCopy.sort((a, b) => {
+    return (b.createdAt || '').localeCompare(a.createdAt || '')
+  })
+})
+
+function applyQueryTab(tab) {
+  if (typeof tab === 'string' && ['all', 'notice', 'free', 'qa'].includes(tab)) {
+    selectedBoardTab.value = tab
+  } else {
+    selectedBoardTab.value = 'all'
+  }
+}
 
 function resetForm() {
   form.value = {
@@ -560,7 +609,6 @@ function addComment() {
 
   commentWriter.value = ''
   commentText.value = ''
-
   selectedPost.value = posts.value.find((post) => post.id === selectedPost.value.id) || null
   savePosts()
 }
@@ -568,6 +616,11 @@ function addComment() {
 onMounted(() => {
   loadPosts()
   loadFavorites()
+  applyQueryTab(route.query.tab)
+})
+
+watch(() => route.query.tab, (newTab) => {
+  applyQueryTab(newTab)
 })
 
 watch(posts, savePosts, { deep: true })
@@ -915,6 +968,42 @@ watch(posts, savePosts, { deep: true })
     flex-direction: column;
     width: 100%;
   }
+}
+
+.col-likes {
+  width: 80px;
+  color: #666;
+  font-size: 13px;
+}
+
+.sort-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.sort-group label {
+  font-size: 13px;
+  color: #888;
+}
+
+.sort-group button {
+  border: none;
+  background: transparent;
+  color: #888;
+  font-size: 13px;
+  padding: 0;
+  cursor: pointer;
+}
+
+.sort-group button.active {
+  color: #333;
+  font-weight: 700;
+}
+
+.sort-group button:hover {
+  color: #555;
 }
 
 @media (max-width: 640px) {
