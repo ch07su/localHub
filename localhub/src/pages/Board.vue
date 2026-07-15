@@ -6,9 +6,9 @@
       <!-- Banner: title + write button + tabs -->
       <section class="board-header banner">
         <div class="banner-left">
-          <p class="eyebrow">커뮤니티</p>
+          
 <div class="banner-left">
-  <p class="eyebrow">커뮤니티</p>
+
   <h1>서울잇다</h1>
   <p>추천 장소, 맛집, 축제 정보와 경험을 나누세요.</p>
 </div>
