@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 import Home from '../pages/Home.vue'
 import Board from '../pages/Board.vue'
-import Festival from '../pages/Festival.vue'
+import PostDetail from '../pages/PostDetail.vue'
 import Map from '../pages/Map.vue'
 
 const router = createRouter({
@@ -19,9 +19,10 @@ const router = createRouter({
       component: Board
     },
     {
-      path: '/festival',
-      name: 'Festival',
-      component: Festival
+      path: '/community/:id',
+      name: 'PostDetail',
+      component: PostDetail,
+      props: true
     },
     {
       path: '/map',
