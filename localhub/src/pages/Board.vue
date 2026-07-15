@@ -7,7 +7,7 @@
         <div>
           <p class="eyebrow">커뮤니티</p>
           <h1>지역 정보 게시판</h1>
-          <p>추천 장소, 맛집, 축제 정보와 경험을 나누세요.</p>
+          <p>추천 장소, 관광지, 레포츠, 문화시설, 쇼핑, 숙박, 축제, 공연행사, 맛집 정보를 서로 공유해요!!.</p>
         </div>
 
         <button class="write-btn" @click="startCreate">
