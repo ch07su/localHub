@@ -61,9 +61,13 @@
           class="horizontal-card"
           @click="focusOnMap(f)"
         >
-          <!-- 카드 왼쪽 이미지 -->
           <div class="card-img-area">
-            <img :src="f.firstimage || 'https://via.placeholder.com/150?text=No+Image'" alt="장소 이미지" />
+            <img
+              v-if="f.firstimage"
+              :src="f.firstimage"
+              alt="장소 이미지"
+              @error="event => event.target.style.display = 'none'"
+            />
           </div>
 
           <!-- 카드 오른쪽 정보 -->
@@ -469,13 +473,15 @@ onMounted(() => {
   height: 100px;
   border-radius: 8px;
   overflow: hidden;
-  background: #f5f5f5;
+  background: #ddd; /* 회색 배경 */
   flex-shrink: 0;
 }
+
 .card-img-area img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 /* 카드 정보 텍스트 */

@@ -4,6 +4,19 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>localhub</title>
+
+    <!-- 스타일(CSS)은 꼭 이렇게 <style> 태그로 감싸주어야 합니다! -->
+    <style>
+      
+      #chat-box { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+      .message { padding: 8px 12px; border-radius: 15px; max-width: 70%; line-height: 1.4; font-size: 14px; }
+      .user { align-self: flex-end; background-color: #007bff; color: white; }
+      .bot { align-self: flex-start; background-color: #e9ecef; color: #333; }
+      #input-container { display: flex; border-top: 1px solid #ddd; }
+      #user-input { flex: 1; border: none; padding: 15px; outline: none; }
+      #send-btn { border: none; background: #007bff; color: white; padding: 0 15px; cursor: pointer; }
+    </style>
+
   </head>
   <body>
     <div id="app"></div>
