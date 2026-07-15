@@ -10,41 +10,17 @@ import Route from '../pages/Route.vue'
 const router = createRouter({
   history: createWebHistory(),
   routes: [
-<<<<<<< HEAD
     { path: '/', name: 'Home', component: Home },
     { path: '/community', name: 'Board', component: Board },
     { path: '/community/:id', name: 'PostDetail', component: PostDetail, props: true },
     { path: '/map', name: 'Map', component: Map },
-    { path: '/route', name: 'Route', component: Route }
-=======
-    {
-      path: '/',
-      name: 'Home',
-      component: Home
-    },
-    {
-      path: '/community',
-      name: 'Board',
-      component: Board
-    },
+    { path: '/route', name: 'Route', component: Route },
     {
       path: '/activity/:type',
       name: 'MyActivity',
       component: MyActivity,
       props: true
-    },
-    {
-      path: '/community/:id',
-      name: 'PostDetail',
-      component: PostDetail,
-      props: true
-    },
-    {
-      path: '/map',
-      name: 'Map',
-      component: Map
     }
->>>>>>> 49b367f278a52a01127579755c4cd54ccc8669da
   ]
 })
 

@@ -7,13 +7,11 @@
       <section class="board-header banner">
         <div class="banner-left">
           <p class="eyebrow">커뮤니티</p>
-<<<<<<< HEAD
-          <h1>서울잇다</h1>
-          <p>추천 장소, 맛집, 축제 정보와 경험을 나누세요.</p>
-=======
-          <h1>지역 커뮤니티</h1>
-          <p>서울 시민들과 소통하고, 유용한 정보를 나누세요.</p>
->>>>>>> 49b367f278a52a01127579755c4cd54ccc8669da
+<div class="banner-left">
+  <p class="eyebrow">커뮤니티</p>
+  <h1>서울잇다</h1>
+  <p>추천 장소, 맛집, 축제 정보와 경험을 나누세요.</p>
+</div>
         </div>
 
         <div class="banner-right">
