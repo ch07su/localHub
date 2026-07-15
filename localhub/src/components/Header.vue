@@ -14,13 +14,13 @@
       </RouterLink>
 
       <RouterLink to="/recommend">
-        챗봇
+        캘린더
       </RouterLink>
     </nav>
 
     <div class="actions">
       <button>
-        임시 검색 위치
+        검색? 챗봇?
       </button>
     </div>
   </header>
