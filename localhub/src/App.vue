@@ -27,11 +27,12 @@
       </div>
 
       <div class="input-container">
-        <input 
-          v-model="input" 
+        <input
+          v-model="input"
+          @keyup.enter="sendMessage"
           placeholder="서울 관광지, 레포츠, 숙박 등을 물어보세요..."
         />
-        <button @click="sendMessage">전송</button>  
+        <button @click="sendMessage" class="send-btn">✈</button>
       </div>
     </div>
   </div>
@@ -112,7 +113,7 @@ const sendMessage = async () => {
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-5-mini',
         messages: [
           { 
             role: 'system', 
@@ -159,13 +160,13 @@ const scrollToBottom = () => {
   bottom: 24px;
   right: 24px;
   z-index: 2200;
-  padding: 12px 18px;
-  background: #007bff;
+  padding: 12px 22px;
+  background: #ff5a22;
   color: #fff;
   border: none;
-  border-radius: 12px;
+  border-radius: 9999px;
   cursor: pointer;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
 }
 
 .chat-container {
@@ -186,7 +187,7 @@ const scrollToBottom = () => {
   right: 24px;
   z-index: 2200;
   padding: 12px 18px;
-  background: #007bff;
+  background: #ff5a22;
   color: #fff;
   border: none;
   border-radius: 12px;
@@ -224,7 +225,7 @@ const scrollToBottom = () => {
   z-index: 1000; 
 }
 .chat-header {
-  background: #007bff;
+  background: #ff5a22;
   color: white;
   padding: 10px 15px;
   font-weight: bold;
@@ -232,11 +233,59 @@ const scrollToBottom = () => {
 .chat-header h4 { margin: 0; font-size: 16px; }
 .chat-box { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: #f8f9fa; }
 .message { padding: 10px 14px; border-radius: 12px; max-width: 80%; line-height: 1.5; font-size: 13px; word-break: break-all; }
-.user { align-self: flex-end; background-color: #007bff; color: white; border-bottom-right-radius: 2px; }
-.bot { align-self: flex-start; background-color: #ffffff; color: #333; border-bottom-left-radius: 2px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-.input-container { display: flex; border-top: 1px solid #eee; background: white; }
+.user {
+  align-self: flex-end;
+  background-color: #ff5a22;
+  border-bottom-right-radius: 2px;
+}
+
+.bot {
+  align-self: flex-start;
+  background-color: #ffffff;
+  color: #333;
+  border-bottom-left-radius: 2px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+
+.input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border-top: 1px solid #eee;
+  background: white;
+  padding: 10px 16px;
+}
+
+.input-container input {
+  width: 100%;
+  padding: 12px 50px 12px 16px;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  outline: none;
+  font-size: 13px;
+}
+
+.send-btn {
+  position: absolute;
+  right: 14px;
+  bottom: 12px;
+  width: 42px;
+  height: 42px;
+  background: #ff5a22;
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  font-size: 18px;
+}
+
 input { flex: 1; border: none; padding: 15px; outline: none; font-size: 13px; }
-button { border: none; background: #007bff; color: white; padding: 0 20px; cursor: pointer; font-weight: bold; }
+button { border: none; background: #ff5a22;ing: 0 20px; cursor: pointer; font-weight: bold; }
 
 /* 모바일 대응 반응형 CSS (요구사항 다 만족) */
 @media (max-width: 480px) {
