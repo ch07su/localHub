@@ -3,17 +3,39 @@
     <Header />
 
     <main class="board-container">
-      <section class="board-header">
-        <div>
-          <p class="eyebrow">커뮤니티</p>
-          <h1>지역 정보 게시판</h1>
-          <p>추천 장소, 맛집, 축제 정보와 경험을 나누세요.</p>
-        </div>
+     <section class="board-header">
+      <div>
+        <p class="eyebrow">커뮤니티</p>
+        <h1>지역 정보 게시판</h1>
+        <p>추천 장소, 맛집, 축제 정보와 경험을 나누세요.</p>
+      </div>
 
-        <button class="write-btn" @click="startCreate">
-          {{ isEditing ? '수정 중' : '글쓰기' }}
+      <div class="header-actions">
+        <button class="sub-nav-card" @click="goToActivity('likes')">
+          <span class="card-icon">👍</span>
+          <span class="card-text">
+            <strong>내가 추천한 글</strong>
+            <small>추천한 글 모아보기</small>
+          </span>
         </button>
-      </section>
+
+        <button class="sub-nav-card" @click="goToActivity('favorites')">
+          <span class="card-icon">⭐</span>
+          <span class="card-text">
+            <strong>내가 관심 등록한 글</strong>
+            <small>관심 있는 글 확인하기</small>
+          </span>
+        </button>
+
+        <button class="write-card" @click="startCreate">
+          <span class="card-icon">✍️</span>
+          <span class="card-text">
+            <strong>글쓰기</strong>
+            <small>새 글을 작성해보세요</small>
+          </span>
+        </button>
+      </div>
+    </section>
 
       <section class="toolbar">
         <input
@@ -447,10 +469,6 @@ function deletePost(post) {
 }
 
 function selectPost(post) {
-  posts.value = posts.value.map((item) =>
-    item.id === post.id ? { ...item, views: (item.views || 0) + 1 } : item
-  )
-
   selectedPost.value = posts.value.find((item) => item.id === post.id) || null
   savePosts()
 }
@@ -488,6 +506,10 @@ function toggleFavorite(post) {
   }
 
   saveFavorites()
+}
+
+function goToActivity(type) {
+  router.push({ name: 'MyActivity', params: { type } })
 }
 
 function addComment() {
@@ -566,6 +588,84 @@ watch(posts, savePosts, { deep: true })
   color: #888;
   font-size: 14px;
   margin: 0;
+}
+
+.header-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(150px, 1fr));
+  gap: 10px;
+  width: min(560px, 100%);
+}
+
+.sub-nav-card,
+.write-card {
+  min-width: 180px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid #f2e2d6;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #fff9f4 0%, #ffffff 100%);
+  box-shadow: 0 8px 20px rgba(255, 122, 61, 0.08);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.sub-nav-card:hover,
+.write-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(255, 122, 61, 0.16);
+}
+
+.card-icon {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: #fff2e8;
+  font-size: 18px;
+}
+
+.card-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  white-space: nowrap;
+}
+
+.card-text strong,
+.card-text small {
+  white-space: nowrap;
+}
+
+.write-card {
+  background: linear-gradient(135deg, #ff7a3d 0%, #ff9b5a 100%);
+  border-color: #ff7a3d;
+}
+
+.write-card .card-icon {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.write-card .card-text strong,
+.write-card .card-text small {
+  color: white;
+}
+
+.sub-nav-btn {
+  border: 1px solid #ffe0d0;
+  background: #fff7f2;
+  color: #ff7a3d;
+  padding: 9px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.sub-nav-btn:hover {
+  background: #ffe7d8;
 }
 
 .write-btn,

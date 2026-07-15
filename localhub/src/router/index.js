@@ -3,6 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Home from '../pages/Home.vue'
 import Board from '../pages/Board.vue'
 import PostDetail from '../pages/PostDetail.vue'
+import MyActivity from '../pages/MyActivity.vue'
 import Map from '../pages/Map.vue'
 
 const router = createRouter({
@@ -17,6 +18,12 @@ const router = createRouter({
       path: '/community',
       name: 'Board',
       component: Board
+    },
+    {
+      path: '/activity/:type',
+      name: 'MyActivity',
+      component: MyActivity,
+      props: true
     },
     {
       path: '/community/:id',
