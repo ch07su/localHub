@@ -342,27 +342,36 @@ function cancelEditProcess() {
 }
 
 function verifyEditPassword() {
-  if (!editPassword.value.trim()) {
+  // 입력값 존재 확인
+  if (!editPassword.value || !editPassword.value.toString().trim()) {
     alert('비밀번호를 입력해주세요.')
     return
   }
 
-  if (!post.value || editPassword.value !== post.value.password) {
+  // 안전하게 문자열로 변환하여 비교 (숫자/문자 구분 제거, 공백 제거)
+  const entered = editPassword.value.toString().trim()
+  const stored = (post.value && post.value.password != null) ? post.value.password.toString().trim() : ''
+
+  console.log('verifyEditPassword:', { entered, stored })
+
+  if (!post.value || entered !== stored) {
     alert('비밀번호가 일치하지 않습니다.')
     return
   }
 
+  // 일치하면 편집폼에 기존 값 채우기
   isEditVerified.value = true
   editForm.value = {
     title: post.value.title,
     writer: post.value.writer,
-    password: post.value.password,
+    password: post.value.password != null ? post.value.password.toString() : '',
     region: post.value.region || '',
     category: post.value.category || '자유게시판',
     content: post.value.content,
     image: post.value.image || '',
     tagInput: (post.value.tags || []).join(', ')
   }
+
   showEditPasswordPrompt.value = false
   showEditForm.value = true
 }
@@ -871,6 +880,11 @@ textarea:focus {
   object-fit: cover;
   border-radius: 10px;
   margin-top: 12px;
+}
+
+.detail-content {
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 @media (max-width: 700px) {
