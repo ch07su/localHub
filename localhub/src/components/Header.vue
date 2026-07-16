@@ -20,7 +20,7 @@
 
     <div class="actions">
       <button>
-        검색? 챗봇?
+        
       </button>
     </div>
   </header>
