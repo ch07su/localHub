@@ -9,7 +9,7 @@
     </nav>
 
  
-    </div>
+  
   </header>
 </template>
 
