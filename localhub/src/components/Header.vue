@@ -8,8 +8,7 @@
       <RouterLink to="/route">일정짜기</RouterLink>
     </nav>
 
-    <div class="actions">
-      <button>검색? 챗봇?</button>
+ 
     </div>
   </header>
 </template>
