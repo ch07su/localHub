@@ -158,11 +158,11 @@ import cultureData from '../data/서울_문화시설.json'
 import shoppingData from '../data/서울_쇼핑.json'
 import accommodationData from '../data/서울_숙박.json'
 
-const activeTab = ref('search') // 'search' 또는 'favorites'
+const activeTab = ref('search') 
 const placeQuery = ref('')
 const placeOptions = ref([])
 const selectedPlaces = ref([])
-const favorites = ref([]) // 즐겨찾기 장소 데이터를 담을 상태
+const favorites = ref([]) 
 
 const draggedIndex = ref(null)
 const routeSummary = ref('')
@@ -201,19 +201,19 @@ function buildPlaceOptions() {
   placeOptions.value = merged
 }
 
-// 즐겨찾기 데이터 로드 함수 (localStorage 등에서 즐겨찾기 리스트를 가져온다고 가정)
+
 function loadFavorites() {
-  // 1) 기존 'favorites' 키 확인 (객체 배열 또는 id 배열일 수 있음)
+
   const savedFavorites = localStorage.getItem('favorites')
   if (savedFavorites) {
     try {
       const parsed = JSON.parse(savedFavorites)
-      // 이미 place 객체 배열이 저장된 경우
+   
       if (Array.isArray(parsed) && parsed.length && typeof parsed[0] === 'object') {
         favorites.value = parsed
         return
       }
-      // id 배열인 경우 placeOptions에서 매핑
+
       if (Array.isArray(parsed)) {
         favorites.value = parsed
           .map(id => placeOptions.value.find(p => p.id == id))
@@ -224,8 +224,6 @@ function loadFavorites() {
       console.error('favorites 파싱 실패', e)
     }
   }
-
-  // 2) Map.vue가 사용하는 키인 'seoul_favorite_places' 확인
   const savedSeoulFav = localStorage.getItem('seoul_favorite_places')
   if (savedSeoulFav) {
     try {
@@ -241,7 +239,7 @@ function loadFavorites() {
     }
   }
 
-  // 3) 기본값: 빈 배열 (또는 테스트용 더미를 넣을 경우 여기에서 설정)
+
   favorites.value = []
 }
 
@@ -279,7 +277,7 @@ function selectFirstResult() {
   }
 }
 
-/* ---------------- 드래그앤드롭 ---------------- */
+
 const dragTranslateY = ref(0)
 let dragEl = null
 let pointerStartY = 0
@@ -370,7 +368,7 @@ function handleDragEnd() {
   routeSummary.value = ''
 }
 
-/* ---------------- 카카오 지도 API ---------------- */
+
 function loadKakaoMapScript() {
   return new Promise((resolve, reject) => {
     if (window.kakao && window.kakao.maps) {
@@ -460,7 +458,7 @@ function buildRoute() {
 
 onMounted(async () => {
   buildPlaceOptions()
-  loadFavorites() // 페이지 진입 시 즐겨찾기 정보 가져오기
+  loadFavorites() 
   await nextTick()
 
   loadKakaoMapScript()
@@ -481,7 +479,7 @@ onMounted(async () => {
   color: #333;
 }
 
-/* ... (rest of the styles unchanged) ... */
+
 
 .route-main {
   max-width: 1200px;
