@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
 import Home from '../pages/Home.vue'
+import Search from '../pages/Search.vue'
 import Board from '../pages/Board.vue'
 import PostDetail from '../pages/PostDetail.vue'
 import MyActivity from '../pages/MyActivity.vue'
@@ -11,16 +12,12 @@ const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/', name: 'Home', component: Home },
+    { path: '/search', name: 'Search', component: Search },
     { path: '/community', name: 'Board', component: Board },
     { path: '/community/:id', name: 'PostDetail', component: PostDetail, props: true },
     { path: '/map', name: 'Map', component: Map },
     { path: '/route', name: 'Route', component: Route },
-    {
-      path: '/activity/:type',
-      name: 'MyActivity',
-      component: MyActivity,
-      props: true
-    }
+    { path: '/activity/:type', name: 'MyActivity', component: MyActivity, props: true }
   ]
 })
 

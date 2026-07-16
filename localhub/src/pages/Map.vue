@@ -50,12 +50,11 @@
           class="horizontal-card"
           @click="focusOnMap(f)"
         >
-          <div class="card-img-area">
+          <div class="card-img-area" :class="{ 'no-image': !f.firstimage }">
             <img
-              v-if="f.firstimage"
-              :src="f.firstimage"
+              :src="f.firstimage || noImagePlaceholder"
               alt="장소 이미지"
-              @error="event => event.target.style.display = 'none'"
+              @error="event => event.target.src = noImagePlaceholder"
             />
           </div>
 
@@ -90,6 +89,7 @@
 </template>
 
 <script setup>
+import noImagePlaceholder from '../assets/free-icon-seoul-4480815.png'
 import Header from '../components/Header.vue'
 import Footer from '../components/Footer.vue'
 
@@ -150,7 +150,6 @@ const getCategoryClass = (item) => {
 
 const rawList = computed(() => {
   if (currentCategory.value === 'none') return []
-
   if (currentCategory.value !== 'all') {
     const activeTab = categoryTabs.find(tab => tab.id === currentCategory.value)
     return activeTab && activeTab.data && activeTab.data.items ? activeTab.data.items : []
@@ -194,7 +193,6 @@ const initMap = () => {
   mapInstance = new kakao.maps.Map(container, options)
 
   updateMarkers()
-  if (currentCategory.value === 'none') return
 }
 
 const updateMarkers = () => {
@@ -213,9 +211,7 @@ const updateMarkers = () => {
     if (f.mapy && f.mapx && !isNaN(lat) && !isNaN(lng)) {
       const position = new kakao.maps.LatLng(lat, lng)
 
-      const marker = new kakao.maps.Marker({
-        position
-      })
+      const marker = new kakao.maps.Marker({ position })
       marker.setMap(mapInstance)
       markers.value.push(marker)
 
@@ -445,8 +441,15 @@ onMounted(() => {
   height: 100px;
   border-radius: 8px;
   overflow: hidden;
-  background: #ddd; /* 회색 배경 */
+  background: #ffd59e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+}
+
+.card-img-area.no-image {
+  background: #ffd59e;
 }
 
 .card-img-area img {
@@ -454,6 +457,11 @@ onMounted(() => {
   height: 100%;
   object-fit: cover;
   display: block;
+}
+
+.card-img-area.no-image img {
+  object-fit: contain;
+  padding: 12px;
 }
 
 .card-info-area {
@@ -580,4 +588,3 @@ onMounted(() => {
   margin: 0;
 }
 </style>
-```

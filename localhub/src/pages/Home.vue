@@ -24,8 +24,12 @@
 
         <!-- 💡 '자세히 보기' 버튼이 삭제되고 검색창이 바로 배치됩니다. -->
         <div class="search-box">
-          <input placeholder="지역, 장소, 맛집을 검색해보세요" />
-          <button class="search-btn" aria-label="검색">
+          <input
+            v-model="searchQuery"
+            @keyup.enter="goSearch"
+            placeholder="지역, 장소, 맛집을 검색해보세요"
+          />
+          <button class="search-btn" aria-label="검색" @click="goSearch">
             <svg class="search-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M11 19C15.4183 19 19 15.4183 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
               <path d="M21 21L16.65 16.65" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -127,6 +131,12 @@ import { useRouter } from 'vue-router'
 import Header from '../components/Header.vue'
 import Footer from '../components/Footer.vue'
 import { readPostsFromStorage } from '../composables/usePosts.js'
+import seoulAttractions from '../data/서울_관광지.json'
+import seoulSports from '../data/서울_레포츠.json'
+import seoulCulture from '../data/서울_문화시설.json'
+import seoulShopping from '../data/서울_쇼핑.json'
+import seoulLodging from '../data/서울_숙박.json'
+import seoulFestival from '../data/서울_축제공연행사.json'
 
 const router = useRouter()
 
@@ -203,6 +213,89 @@ const posts = computed(() =>
     .slice(0, 6)
 )
 
+const searchQuery = ref('')
+
+// combine seoul datasets with source label
+const seoulDataMap = {
+  '관광지': seoulAttractions,
+  '레포츠': seoulSports,
+  '문화시설': seoulCulture,
+  '쇼핑': seoulShopping,
+  '숙박': seoulLodging,
+  '축제/공연': seoulFestival
+}
+
+// flatten posts source (use allPosts already loading)
+function normalizeTitle(item) {
+  // try common fields, fallback to joined string
+  return (
+    item.title ||
+    item.name ||
+    item.시설명 ||
+    item.명칭 ||
+    (typeof item === 'string' ? item : JSON.stringify(item))
+  )
+}
+
+// search places by stringifying entry (robust for unknown schema)
+const seoulResults = computed(() => {
+  const q = searchQuery.value.trim().toLowerCase()
+  if (!q) return []
+  const results = []
+  Object.entries(seoulDataMap).forEach(([source, arr]) => {
+    if (!Array.isArray(arr)) return
+    arr.forEach((item, idx) => {
+      const hay = JSON.stringify(item).toLowerCase()
+      if (hay.includes(q)) {
+        results.push({
+          _id: `${source}-${idx}`,
+          source,
+          title: normalizeTitle(item),
+          raw: item
+        })
+      }
+    })
+  })
+  return results.slice(0, 8) // limit
+})
+
+// posts search
+const allStoredPosts = ref([])
+onMounted(() => {
+  allStoredPosts.value = readPostsFromStorage()
+})
+
+const postResults = computed(() => {
+  const q = searchQuery.value.trim().toLowerCase()
+  if (!q) return []
+  return allStoredPosts.value
+    .filter((p) => {
+      const hay = (
+        (p.title || '') +
+        ' ' +
+        (p.content || '') +
+        ' ' +
+        (p.writer || '') +
+        ' ' +
+        ((p.tags || []).join(' ') || '')
+      ).toLowerCase()
+      return hay.includes(q)
+    })
+    .slice(0, 6)
+})
+
+// handler for explicit search button (keeps results reactive already)
+function onSearch() {
+  // no-op for now; computed results update automatically
+  // Could be used to log analytics or focus results box
+}
+
+// open place -> navigate to map with query (Map.vue can use query.q)
+function openPlace(result) {
+  const q = result.title
+  router.push({ name: 'Map', query: { q } })
+}
+
 function openPost(post) {
   router.push({ name: 'PostDetail', params: { id: post.id } })
 }
@@ -220,6 +313,12 @@ function scrollFeed(dir) {
     const idx = Math.round(track.scrollLeft / (cardWidth + 24)) + 1
     feedPage.value = Math.min(Math.max(idx, 1), posts.value.length || 1)
   }, 300)
+}
+
+function goSearch() {
+  const q = searchQuery.value.trim()
+  if (!q) return
+  router.push({ name: 'Search', query: { q } })
 }
 </script>
 
@@ -588,6 +687,35 @@ function scrollFeed(dir) {
 .feed-arrow-right {
   margin-left: 12px;
 }
+.search-results {
+  margin-top: 10px;
+  background: rgba(255,255,255,0.95);
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  color: #222;
+}
+.results-group h4 {
+  margin: 0 0 6px 0;
+  font-size: 13px;
+  color: #777;
+}
+.search-results ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.search-results li {
+  padding: 8px 6px;
+  cursor: pointer;
+  border-radius: 8px;
+}
+.search-results li:hover {
+  background: #faf7f4;
+}
+.post-title { font-weight: 700; }
+.post-meta { color: #777; font-size: 12px; }
+.no-results { color: #777; padding: 8px 6px; }
 
 /* ---------------- Responsive ---------------- */
 @media (max-width: 768px) {
