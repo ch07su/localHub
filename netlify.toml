@@ -1,4 +1,4 @@
 [build]
   base = "localhub"
   command = "npm run build"
-  publish = "localhub/dist"
+  publish = "dist"
