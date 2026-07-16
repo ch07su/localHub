@@ -6,7 +6,7 @@
     <section class="search-filter-section">
       <div class="filter-wrapper">
         
-        <!-- 🎖️ 실시간 스탬프 레벨 대시보드 -->
+        <!-- 🎖️ 실시간 스탬프 레벨 대시보드 (기존 유지) -->
         <div class="stamp-level-dashboard">
           <div class="level-badge-wrap">
             <span class="level-tag">Lv.{{ userLevel.lv }}</span>
@@ -27,16 +27,37 @@
           </p>
         </div>
 
-        <!-- 🔍 세련되고 깔끔하게 개선된 검색창 -->
+        <!-- 🔍 세련되고 깔끔하게 개선된 검색창 (추천 드롭다운 연동 레이어 감싸기) -->
         <div class="search-row">
-          <div class="search-input-box">
-            <input 
-              type="text" 
-              v-model="searchQuery" 
-              placeholder="장소, 지역, 키워드 검색" 
-              @keyup.enter="handleSearch"
-            />
-            <button class="search-btn" @click="handleSearch">🔍</button>
+          <div class="search-wrapper" style="position: relative; width: 100%; z-index: 99;">
+            <div class="search-input-box">
+              <input 
+                type="text" 
+                v-model="searchQuery" 
+                placeholder="장소, 지역, 키워드 검색" 
+                @focus="isDropdownOpen = true"
+                @blur="handleBlur"
+                @keyup.enter="selectFirstRecommendation"
+              />
+              <button class="search-btn" @click="handleSearch">🔍</button>
+            </div>
+
+            <!-- ★ 입력 포커스 시 나타나는 실시간 추천 드롭다운 목록 -->
+            <ul 
+              v-if="isDropdownOpen && filteredRecommendations.length" 
+              class="recommendation-dropdown"
+            >
+              <li
+                v-for="place in filteredRecommendations"
+                :key="place.contentid"
+                @mousedown="clickRecommendation(place)"
+              >
+                <div class="recommend-item">
+                  <span class="recommend-title">{{ place.title }}</span>
+                  <span class="recommend-address">{{ place.addr1 }}</span>
+                </div>
+              </li>
+            </ul>
           </div>
         </div>
 
@@ -233,6 +254,9 @@ const selectedDistrict = ref('all')
 const searchQuery = ref('')
 const showOnlyStamped = ref(false)
 
+// 드롭다운 가시성 상태 관리
+const isDropdownOpen = ref(false)
+
 // 💮 모달 열기/닫기 상태
 const isModalOpen = ref(false)
 
@@ -320,6 +344,73 @@ const toggleFavorite = (contentid) => {
 
 const isFavorited = (contentid) => {
   return favoriteIds.value.includes(contentid)
+}
+
+// 전체 카테고리에서 병합된 전체 장소 목록 (드롭다운 추천용 기반 데이터)
+const allMergedPlaces = computed(() => {
+  let combined = []
+  categoryTabs.forEach(tab => {
+    if (tab.data && tab.data.items) {
+      combined = [...combined, ...tab.data.items]
+    }
+  })
+  // 중복 제거
+  const uniqueList = []
+  const ids = new Set()
+  combined.forEach(item => {
+    if (!ids.has(item.contentid)) {
+      ids.add(item.contentid)
+      uniqueList.push(item)
+    }
+  })
+  return uniqueList
+})
+
+// ★ 실시간 드롭다운 추천 리스트 계산 (상위 8개 노출)
+const filteredRecommendations = computed(() => {
+  const query = searchQuery.value.trim().toLowerCase()
+  if (!query) return []
+  return allMergedPlaces.value
+    .filter(place => {
+      const titleMatch = place.title && place.title.toLowerCase().includes(query)
+      const addrMatch = place.addr1 && place.addr1.toLowerCase().includes(query)
+      return titleMatch || addrMatch
+    })
+    .slice(0, 8)
+})
+
+// 입력 포커스가 해제될 때 부드럽게 드롭다운 닫기
+const handleBlur = () => {
+  setTimeout(() => {
+    isDropdownOpen.value = false
+  }, 200)
+}
+
+// 드롭다운 장소 클릭 액션
+const clickRecommendation = (place) => {
+  searchQuery.value = place.title
+  isDropdownOpen.value = false
+  
+  // 만약 검색창이 비어 있다면 전체 카테고리를 활성화하여 강제로 카드가 보이도록 유도
+  if (currentCategory.value === 'none') {
+    currentCategory.value = 'all'
+  }
+  
+  updateMarkers()
+  
+  // 마커 업데이트 후 즉시 해당 위치로 초점 이동 및 스크롤
+  setTimeout(() => {
+    focusOnMap(place)
+  }, 150)
+}
+
+// 검색창에서 엔터를 쳤을 때 자동 매칭
+const selectFirstRecommendation = () => {
+  if (filteredRecommendations.value.length > 0) {
+    clickRecommendation(filteredRecommendations.value[0])
+  } else {
+    handleSearch()
+  }
 }
 
 const rawList = computed(() => {
@@ -693,6 +784,52 @@ onMounted(() => {
 
 .search-btn:hover {
   transform: translateY(-50%) scale(1.15);
+}
+
+/* ★ 추가: 기존 UI 무너지지 않으면서 검색어 자동 완성 띄우는 드롭다운 스타일 */
+.recommendation-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border: 1.5px solid #ffdec0;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(255, 90, 34, 0.1);
+  margin: 0;
+  padding: 8px 0;
+  list-style: none;
+  max-height: 260px;
+  overflow-y: auto;
+  text-align: left;
+  z-index: 1000;
+}
+
+.recommendation-dropdown li {
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.recommendation-dropdown li:hover {
+  background-color: #fff9f5;
+}
+
+.recommend-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.recommend-title {
+  font-weight: 700;
+  color: #222222;
+  font-size: 14.5px;
+}
+
+.recommend-address {
+  font-size: 12px;
+  color: #888888;
 }
 
 .select-row {
