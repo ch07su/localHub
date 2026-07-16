@@ -57,8 +57,8 @@
     <!-- 동네 소식 (카드 캐러셀) -->
     <section class="feed-section" ref="feedSection">
       <div class="feed-heading">
-        <p class="feed-eyebrow">우리 동네에서 일어나는 다양한 소식</p>
-        <h2 class="feed-title">동네 <span>Now!</span></h2>
+        <p class="feed-eyebrow"> 서울에서 일어나는 다양한 소식</p>
+        <h2 class="feed-title">Seoul <span>Now!</span></h2>
       </div>
 
       <div class="feed-carousel">

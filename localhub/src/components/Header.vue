@@ -4,8 +4,8 @@
 
     <nav>
       <RouterLink to="/community">게시판</RouterLink>
-      <RouterLink to="/map">지도</RouterLink>
-      <RouterLink to="/route">일정짜기</RouterLink>
+      <RouterLink to="/map">지도보기</RouterLink>
+      <RouterLink to="/route">여행플래너</RouterLink>
     </nav>
 
  
