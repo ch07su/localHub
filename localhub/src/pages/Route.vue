@@ -6,40 +6,83 @@
       <section class="route-hero">
         <div class="hero-copy">
           <p class="eyebrow">서울 여행 길찾기</p>
-          <h1>검색으로 장소를 골라보세요</h1>
+          <h1>검색 또는 즐겨찾기에서 장소를 골라보세요</h1>
           <p>
-            장소를 검색해서 필요한 장소를 추가하고, 선택한 장소를 지도 위에 확인하세요.
+            장소를 검색하거나 즐겨찾기 목록에서 필요한 장소를 추가하고, 선택한 장소를 지도 위에 확인하세요.
           </p>
         </div>
 
         <div class="hero-card">
-          <div class="search-box">
-            <input
-              :value="placeQuery"
-              @input="placeQuery = $event.target.value"
-              placeholder="장소명, 지역, 키워드를 입력하세요"
-            />
-            <button type="button" @click="selectFirstResult">검색</button>
+          <!-- 상단 탭: 검색 vs 즐겨찾기 -->
+          <div class="tab-menu">
+            <button 
+              type="button" 
+              :class="{ active: activeTab === 'search' }" 
+              @click="activeTab = 'search'"
+            >
+              🔎 장소 검색
+            </button>
+            <button 
+              type="button" 
+              :class="{ active: activeTab === 'favorites' }" 
+              @click="activeTab = 'favorites'"
+            >
+              ⭐ 즐겨찾기 한 장소
+            </button>
           </div>
 
-          <ul v-if="searchResults.length" class="search-results">
-            <li
-              v-for="item in searchResults"
-              :key="item.id"
-              @mousedown.prevent="selectPlace(item)"
-            >
-              <strong>{{ item.title }}</strong>
-              <span>{{ item.address || '주소 정보 없음' }}</span>
-            </li>
-          </ul>
+          <!-- 1. 장소 검색 탭 영역 -->
+          <div v-show="activeTab === 'search'" class="tab-content">
+            <div class="search-box">
+              <input
+                :value="placeQuery"
+                @input="placeQuery = $event.target.value"
+                placeholder="장소명, 지역, 키워드를 입력하세요"
+              />
+              <button type="button" @click="selectFirstResult">검색</button>
+            </div>
 
-          <p v-else class="search-hint">
-            장소명을 입력하면 추천 결과가 나타납니다.
-          </p>
+            <ul v-if="searchResults.length" class="search-results">
+              <li
+                v-for="item in searchResults"
+                :key="item.id"
+                @mousedown.prevent="selectPlace(item)"
+              >
+                <strong>{{ item.title }}</strong>
+                <span>{{ item.address || '주소 정보 없음' }}</span>
+              </li>
+            </ul>
+
+            <p v-else class="search-hint">
+              장소명을 입력하면 추천 결과가 나타납니다.
+            </p>
+          </div>
+
+          <!-- 2. 즐겨찾기 탭 영역 -->
+          <div v-show="activeTab === 'favorites'" class="tab-content">
+            <div v-if="favorites.length" class="favorites-grid">
+              <div
+                v-for="place in favorites"
+                :key="place.id"
+                class="favorite-card-item"
+                @click="selectPlace(place)"
+              >
+                <div class="favorite-info">
+                  <strong>{{ place.title }}</strong>
+                  <span>{{ place.address || '주소 정보 없음' }}</span>
+                </div>
+                <span class="add-badge">+ 추가</span>
+              </div>
+            </div>
+            <p v-else class="search-hint">
+              아직 즐겨찾기한 장소가 없습니다.
+            </p>
+          </div>
         </div>
       </section>
 
       <section class="route-layout">
+        <!-- 왼쪽: 선택 목록 패널 -->
         <div class="route-panel">
           <div class="panel-header">
             <div>
@@ -75,7 +118,7 @@
             </div>
 
             <div v-if="!selectedPlaces.length" key="empty" class="empty-selected">
-              검색에서 장소를 추가하면 여기서 경로 순서를 확인할 수 있어요.
+              검색이나 즐겨찾기에서 장소를 추가하면 여기서 경로 순서를 확인할 수 있어요.
             </div>
           </TransitionGroup>
 
@@ -93,6 +136,7 @@
           </div>
         </div>
 
+        <!-- 우측: 지도 영역 -->
         <div class="route-map-card">
           <div id="route-map" class="route-map"></div>
         </div>
@@ -114,9 +158,12 @@ import cultureData from '../data/서울_문화시설.json'
 import shoppingData from '../data/서울_쇼핑.json'
 import accommodationData from '../data/서울_숙박.json'
 
+const activeTab = ref('search') // 'search' 또는 'favorites'
 const placeQuery = ref('')
 const placeOptions = ref([])
 const selectedPlaces = ref([])
+const favorites = ref([]) // 즐겨찾기 장소 데이터를 담을 상태
+
 const draggedIndex = ref(null)
 const routeSummary = ref('')
 const routeError = ref('')
@@ -136,12 +183,10 @@ const datasets = [
 
 function buildPlaceOptions() {
   const merged = []
-
   datasets.forEach(({ data }) => {
     ;(data?.items || []).forEach((item) => {
       const lat = Number(item.mapy)
       const lng = Number(item.mapx)
-
       if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
         merged.push({
           id: item.contentid || `${item.title}-${merged.length}`,
@@ -153,14 +198,31 @@ function buildPlaceOptions() {
       }
     })
   })
-
   placeOptions.value = merged
+}
+
+// 즐겨찾기 데이터 로드 함수 (localStorage 등에서 즐겨찾기 리스트를 가져온다고 가정)
+function loadFavorites() {
+  const savedFavorites = localStorage.getItem('favorites')
+  if (savedFavorites) {
+    try {
+      favorites.value = JSON.parse(savedFavorites)
+    } catch (e) {
+      console.error('즐겨찾기 데이터를 불러오는 데 실패했습니다.', e)
+      favorites.value = []
+    }
+  } else {
+    // 만약 테스트용 데이터가 필요하다면 아래처럼 더미 데이터를 넣어둘 수 있습니다.
+    favorites.value = [
+      { id: 'fav-1', title: '경복궁', address: '서울특별시 종로구 사직로 161', mapx: 126.9770, mapy: 37.5796 },
+      { id: 'fav-2', title: 'N서울타워', address: '서울특별시 용산구 남산공원길 105', mapx: 126.9882, mapy: 37.5511 }
+    ]
+  }
 }
 
 const searchResults = computed(() => {
   const query = placeQuery.value.trim().toLowerCase()
   if (!query) return []
-
   return placeOptions.value
     .filter((item) => {
       return (
@@ -171,10 +233,8 @@ const searchResults = computed(() => {
     .slice(0, 12)
 })
 
-
 function selectPlace(place) {
   if (selectedPlaces.value.some((item) => item.id === place.id)) return
-
   selectedPlaces.value.push(place)
   placeQuery.value = ''
   routeError.value = ''
@@ -194,6 +254,7 @@ function selectFirstResult() {
   }
 }
 
+/* ---------------- 드래그앤드롭 ---------------- */
 const dragTranslateY = ref(0)
 let dragEl = null
 let pointerStartY = 0
@@ -204,7 +265,6 @@ let containerBottom = 0
 
 function handleDragStart(index, event) {
   if (event.button !== 0) return
-
   event.preventDefault()
 
   const card = event.currentTarget
@@ -223,39 +283,38 @@ function handleDragStart(index, event) {
   containerBottom = containerRect.bottom
 
   document.body.style.userSelect = 'none'
-  window.addEventListener('mousemove', handleDragMove)
+  window.addEventListener('mousemove', handleDragMove, { passive: false })
   window.addEventListener('mouseup', handleDragEnd)
 }
 
 function handleDragMove(event) {
   if (draggedIndex.value === null) return
-
   let delta = event.clientY - pointerStartY
-  const newTop = elStartTop + delta
-  const newBottom = newTop + elHeight
+  const projectedTop = elStartTop + delta
+  const projectedBottom = projectedTop + elHeight
 
-  if (newTop < containerTop) {
+  if (projectedTop < containerTop) {
     delta = containerTop - elStartTop
-  } else if (newBottom > containerBottom) {
+  } else if (projectedBottom > containerBottom) {
     delta = containerBottom - elStartTop - elHeight
   }
-
+  
   dragTranslateY.value = delta
-
-  const draggedCenter = elStartTop + elHeight / 2 + delta
+  const mouseCurrentY = event.clientY
   const container = dragEl.parentElement
   const currentIndex = draggedIndex.value
 
   const belowEl = container.querySelector(`[data-index="${currentIndex + 1}"]`)
   if (belowEl) {
     const belowRect = belowEl.getBoundingClientRect()
-    const belowCenter = belowRect.top + belowRect.height / 2
-
-    if (draggedCenter > belowCenter) {
+    const swapThreshold = belowRect.top + (belowRect.height / 2)
+    if (mouseCurrentY > swapThreshold) {
       const moved = selectedPlaces.value.splice(currentIndex, 1)[0]
       selectedPlaces.value.splice(currentIndex + 1, 0, moved)
       elStartTop += belowRect.height
+      pointerStartY += belowRect.height
       draggedIndex.value = currentIndex + 1
+      dragTranslateY.value = event.clientY - pointerStartY
       return
     }
   }
@@ -263,13 +322,14 @@ function handleDragMove(event) {
   const aboveEl = container.querySelector(`[data-index="${currentIndex - 1}"]`)
   if (aboveEl) {
     const aboveRect = aboveEl.getBoundingClientRect()
-    const aboveCenter = aboveRect.top + aboveRect.height / 2
-
-    if (draggedCenter < aboveCenter) {
+    const swapThreshold = aboveRect.top + (aboveRect.height / 2)
+    if (mouseCurrentY < swapThreshold) {
       const moved = selectedPlaces.value.splice(currentIndex, 1)[0]
       selectedPlaces.value.splice(currentIndex - 1, 0, moved)
       elStartTop -= aboveRect.height
+      pointerStartY -= aboveRect.height
       draggedIndex.value = currentIndex - 1
+      dragTranslateY.value = event.clientY - pointerStartY
     }
   }
 }
@@ -285,13 +345,13 @@ function handleDragEnd() {
   routeSummary.value = ''
 }
 
+/* ---------------- 카카오 지도 API ---------------- */
 function loadKakaoMapScript() {
   return new Promise((resolve, reject) => {
     if (window.kakao && window.kakao.maps) {
       window.kakao.maps.load(resolve)
       return
     }
-
     const script = document.createElement('script')
     script.src = `https://dapi.kakao.com/v2/maps/sdk.js?autoload=false&appkey=${kakaoMapAppKey}`
     script.onload = () => window.kakao.maps.load(resolve)
@@ -311,14 +371,12 @@ function initMap() {
     })
     routeMapInstance.value.relayout?.()
   }
-
   return routeMapInstance.value
 }
 
 function clearMap() {
   routeMarkers.value.forEach((marker) => marker.setMap(null))
   routeMarkers.value = []
-
   if (routePolyline.value) {
     routePolyline.value.setMap(null)
     routePolyline.value = null
@@ -328,7 +386,6 @@ function clearMap() {
 function focusMap(place) {
   const map = initMap()
   if (!map) return
-
   const position = new window.kakao.maps.LatLng(place.mapy, place.mapx)
   map.panTo(position)
   map.setLevel(5)
@@ -339,10 +396,8 @@ function drawSimpleRoute(items) {
   if (!map) return
 
   clearMap()
-
   const path = items.map((item) => new window.kakao.maps.LatLng(item.mapy, item.mapx))
   const bounds = new window.kakao.maps.LatLngBounds()
-
   path.forEach((point) => bounds.extend(point))
 
   items.forEach((item) => {
@@ -364,7 +419,6 @@ function drawSimpleRoute(items) {
       strokeStyle: 'solid'
     })
   }
-
   map.setBounds(bounds)
 }
 
@@ -374,14 +428,14 @@ function buildRoute() {
     routeSummary.value = ''
     return
   }
-
   routeError.value = ''
   drawSimpleRoute(selectedPlaces.value)
-  routeSummary.value = '선택한 장소를 연결한 단순 경로를 표시했습니다.'
+  routeSummary.value = '선택한 장소를 연결한 경로를 표시했습니다.'
 }
 
 onMounted(async () => {
   buildPlaceOptions()
+  loadFavorites() // 페이지 진입 시 즐겨찾기 정보 가져오기
   await nextTick()
 
   loadKakaoMapScript()
@@ -451,6 +505,41 @@ onMounted(async () => {
   box-shadow: 0 14px 40px rgba(0, 0, 0, 0.05);
 }
 
+/* 탭 스타일 추가 */
+.tab-menu {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #ffecd9;
+  padding-bottom: 12px;
+}
+
+.tab-menu button {
+  background: none;
+  border: none;
+  font-size: 16px;
+  font-weight: 700;
+  color: #8a8a8a;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.tab-menu button:hover {
+  color: #ff7a00;
+  background: #fff8f2;
+}
+
+.tab-menu button.active {
+  color: #ff7a00;
+  background: #ffe9d6;
+}
+
+.tab-content {
+  min-height: 120px;
+}
+
 .search-box {
   display: flex;
   gap: 12px;
@@ -478,6 +567,67 @@ onMounted(async () => {
   cursor: pointer;
 }
 
+/* 즐겨찾기 그리드 스타일 추가 */
+.favorites-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+  max-width: 840px;
+}
+
+.favorite-card-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: 16px;
+  background: #fffcf8;
+  border: 1px solid #ffeedd;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.favorite-card-item:hover {
+  transform: translateY(-2px);
+  background: #fff5eb;
+  border-color: #ffcc99;
+  box-shadow: 0 8px 16px rgba(255, 122, 0, 0.08);
+}
+
+.favorite-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
+  text-align: left;
+}
+
+.favorite-info strong {
+  font-size: 15px;
+  color: #222;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.favorite-info span {
+  font-size: 13px;
+  color: #7a7a7a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.add-badge {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ff7a00;
+  background: #fff0e0;
+  padding: 4px 8px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
 .search-results {
   margin: 0;
   padding: 0;
@@ -494,6 +644,7 @@ onMounted(async () => {
   border: 1px solid #ffecd9;
   cursor: pointer;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
+  text-align: left;
 }
 
 .search-results li:hover {
@@ -516,6 +667,7 @@ onMounted(async () => {
   margin: 0;
   color: #8a8a8a;
   font-size: 15px;
+  text-align: left;
 }
 
 .route-layout {
@@ -678,7 +830,8 @@ onMounted(async () => {
 
 .route-map {
   width: 100%;
-  height: 640px;
+  height: 100%;
+  min-height: 640px;
   border-radius: 24px;
   border: 1px solid #f0e0d6;
   overflow: hidden;
@@ -691,6 +844,7 @@ onMounted(async () => {
 
   .route-map {
     height: 520px;
+    min-height: 520px;
   }
 }
 
@@ -713,6 +867,7 @@ onMounted(async () => {
 
   .route-map {
     height: 420px;
+    min-height: 420px;
   }
 }
 </style>
