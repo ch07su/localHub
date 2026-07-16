@@ -107,42 +107,53 @@
       </div>
       
       <div class="horizontal-card-list" v-if="filteredList.length > 0">
-          <div
-            v-for="f in filteredList"
-            :key="f.contentid"
-            class="horizontal-card"
-            @click="focusOnMap(f)"
-          >
-            <div class="card-action-buttons">
-              <button
-                :class="['card-fav-btn', { 'favorited': isFavorited(f.contentid) }]"
-                @click.stop="toggleFavorite(f.contentid)"
-              >
-                {{ isFavorited(f.contentid) ? '★' : '☆' }}
-              </button>
+                  <div
+          v-for="f in filteredList"
+          :key="f.contentid"
+          class="horizontal-card"
+          @click="focusOnMap(f)"
+        >
+          <div class="card-action-buttons">
+            <button
+              :class="['card-fav-btn', { 'favorited': isFavorited(f.contentid) }]"
+              @click.stop="toggleFavorite(f.contentid)"
+            >
+              {{ isFavorited(f.contentid) ? '★' : '☆' }}
+            </button>
 
-              <div class="stamp-btn-wrapper">
-                <button
-                  :class="['card-stamp-btn', { 'stamped': isStamped(f.contentid) }]"
-                  @click.stop="toggleStamp(f.contentid)"
-                >
-                  {{ isStamped(f.contentid) ? '💮' : '○' }}
-                </button>
-                <span :class="['stamp-label', { 'stamped-active': isStamped(f.contentid) }]">
-                  {{ isStamped(f.contentid) ? '다녀옴!' : '도장 찍기' }}
-                </span>
-              </div>
+            <div class="stamp-btn-wrapper">
+              <button
+                :class="['card-stamp-btn', { 'stamped': isStamped(f.contentid) }]"
+                @click.stop="toggleStamp(f.contentid)"
+              >
+                {{ isStamped(f.contentid) ? '💮' : '○' }}
+              </button>
+              <span :class="['stamp-label', { 'stamped-active': isStamped(f.contentid) }]">
+                {{ isStamped(f.contentid) ? '다녀옴!' : '도장 찍기' }}
+              </span>
             </div>
           </div>
-            <div class="card-img-area" :class="{ 'no-image': !f.firstimage }">
-              <img
-                :src="f.firstimage || noImagePlaceholder"
-                alt="장소 이미지"
-                @error="event => event.target.src = noImagePlaceholder"
-              />
-            </div>
-      </div>
 
+          <div class="card-img-area" :class="{ 'no-image': !f.firstimage }">
+            <img
+              :src="f.firstimage || noImagePlaceholder"
+              alt="장소 이미지"
+              @error="event => event.target.src = noImagePlaceholder"
+            />
+          </div>
+
+          <div class="card-info-area">
+            <div class="card-title-row">
+              <h4 class="card-title">{{ f.title || '제목 없음' }}</h4>
+              <span :class="['category-badge', getCategoryClass(f)]">
+                {{ getCategoryNameOfItem(f) }}
+              </span>
+            </div>
+            <p class="card-address">{{ f.addr1 || '주소 정보가 없습니다.' }}</p>
+            <p class="card-desc">{{ f.tel ? '📞 ' + f.tel : '상세 정보는 마커를 호버하여 확인하세요.' }}</p>
+          </div>
+        </div>
+      </div>
       <div class="no-data" v-else>
         <p v-if="showOnlyStamped">아직 찍은 스탬프가 없거나 필터 조건에 맞는 스탬프가 없습니다. 🥲</p>
         <p v-else>검색 결과와 일치하는 장소가 없습니다. 🥲</p>
@@ -991,6 +1002,10 @@ onMounted(() => {
 
 .card-img-area.no-image {
   background: #ffd59e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .card-img-area img {
