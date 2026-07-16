@@ -39,12 +39,12 @@
 
         <nav class="board-tabs" aria-label="게시판 탭">
           <button
-            v-for="tab in boardTabs"
-            :key="tab.key"
-            class="tab-btn"
-            :class="{ active: selectedBoardTab === tab.key }"
-            @click="selectedBoardTab = tab.key"
-          >
+              v-for="tab in boardTabs"
+              :key="tab.key"
+              class="tab-btn"
+              :class="{ active: selectedBoardTab === tab.key }"
+              @click="selectBoardTab(tab.key)"
+            >
             <span class="tab-title">{{ tab.label }}</span>
             <span class="tab-count">{{ tabCount(tab.key) }}</span>
           </button>
@@ -104,13 +104,18 @@
         <h2>{{ isEditing ? '게시글 수정' : '새 글 작성' }}</h2>
 
         <div class="form-row">
-          <input v-model="form.title" placeholder="제목" />
-          <input v-model="form.writer" placeholder="작성자" />
+          <input v-model="form.title" class="flex-large" placeholder="제목" />
+          <input v-model="form.writer" class="flex-small" placeholder="작성자" />
         </div>
 
         <div class="form-row">
-          <input v-model="form.password" type="password" placeholder="비밀번호" />
-          <select v-model="form.region">
+          <input
+            v-model="form.password"
+            type="password"
+            class="flex-large"
+            placeholder="비밀번호"
+          />
+          <select v-model="form.region" class="flex-small">
             <option value="">지역 선택</option>
             <option v-for="region in regionOptions" :key="region" :value="region">
               {{ region }}
@@ -119,7 +124,7 @@
         </div>
 
         <div class="form-row">
-          <select v-model="form.category">
+          <select v-model="form.category" class="flex-small">
             <option value="공지사항">공지사항</option>
             <option value="자유게시판">자유게시판</option>
             <option value="Q&A">Q&A</option>
@@ -127,7 +132,7 @@
 
           <input
             v-model="form.tagInput"
-            class="tag-input"
+            class="tag-input flex-large"
             placeholder="태그를 쉼표로 입력하세요. 예: 서울, 밤산책"
           />
         </div>
@@ -580,6 +585,12 @@ function toggleFavorite(post) {
   saveFavorites()
 }
 
+function selectBoardTab(tabKey) {
+  selectedBoardTab.value = tabKey
+  showForm.value = false
+  resetForm()
+}
+
 function goToActivity(type) {
   router.push({ name: 'MyActivity', params: { type } })
 }
@@ -849,6 +860,42 @@ watch(posts, savePosts, { deep: true })
   gap: 10px;
   margin-top: 12px;
   flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.submit-btn {
+  border: none;
+  border-radius: 10px;
+  padding: 12px 22px;
+  background: linear-gradient(135deg, #ff7a3d 0%, #ff945f 100%);
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 12px 24px rgba(255, 122, 61, 0.18);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.submit-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 28px rgba(255, 122, 61, 0.24);
+}
+
+.cancel-btn {
+  border: 1px solid #ff7a3d;
+  background: #ffffff;
+  color: #ff7a3d;
+  border-radius: 10px;
+  padding: 12px 22px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.cancel-btn:hover {
+  background: #ff7a3d;
+  color: #ffffff;
+  transform: translateY(-1px);
 }
 
 .preview-image {

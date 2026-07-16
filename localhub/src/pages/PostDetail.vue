@@ -51,13 +51,68 @@
           
         </div>
 
-        <section v-if="showEditForm" class="edit-form">
-          <h3>게시글 수정</h3>
-          <input v-model="editForm.title" placeholder="제목" />
-          <input v-model="editForm.password" type="password" placeholder="비밀번호" />
-          <textarea v-model="editForm.content" rows="5" placeholder="내용"></textarea>
-          <button class="submit-btn" @click="submitEdit">수정하기</button>
-        </section>
+        <section v-if="showEditPasswordPrompt" class="write-form">
+  <h3>게시글 수정</h3>
+
+  <div class="form-row">
+    <input v-model="editPassword" type="password" placeholder="수정 비밀번호를 입력하세요" />
+  </div>
+
+  <div class="form-actions">
+    <button class="submit-btn" @click="verifyEditPassword">확인</button>
+    <button class="cancel-btn" @click="cancelEditProcess">취소</button>
+  </div>
+</section>
+
+<section v-if="showEditForm" class="write-form">
+  <h3>게시글 수정</h3>
+
+  <div class="form-row">
+    <input v-model="editForm.title" class="flex-large" placeholder="제목" />
+    <input v-model="editForm.writer" class="flex-small" placeholder="작성자" />
+  </div>
+
+  <div class="form-row">
+    <input v-model="editForm.password" type="password" class="flex-large" placeholder="비밀번호" />
+    <select v-model="editForm.region" class="flex-small">
+      <option value="">지역 선택</option>
+      <option v-for="region in regionOptions" :key="region" :value="region">
+        {{ region }}
+      </option>
+    </select>
+  </div>
+
+  <div class="form-row">
+    <select v-model="editForm.category" class="flex-small">
+      <option value="">게시판 선택</option>
+      <option value="공지사항">공지사항</option>
+      <option value="자유게시판">자유게시판</option>
+      <option value="Q&A">Q&A</option>
+    </select>
+
+    <input
+      v-model="editForm.tagInput"
+      class="tag-input flex-large"
+      placeholder="태그를 쉼표로 입력하세요. 예: 서울, 밤산책"
+    />
+  </div>
+
+  <textarea v-model="editForm.content" rows="6" placeholder="내용을 입력하세요."></textarea>
+
+  <input type="file" accept="image/*" @change="handleEditImageUpload" />
+  <img v-if="editForm.image" :src="editForm.image" class="preview-image" />
+
+  <div v-if="editForm.image || post.image" class="form-actions">
+    <button type="button" class="cancel-btn" @click="removeEditImage">
+      기존 이미지 삭제
+    </button>
+  </div>
+
+  <div class="form-actions">
+    <button class="submit-btn" @click="submitEdit">수정하기</button>
+    <button class="cancel-btn" @click="cancelEditProcess">취소</button>
+  </div>
+</section>
 
         <section class="comment-section">
           <h3>댓글</h3>
@@ -106,6 +161,13 @@ import { useRoute, useRouter } from 'vue-router'
 import Header from '../components/Header.vue'
 import Footer from '../components/Footer.vue'
 
+const regionOptions = [
+  '종로구','중구','용산구','성동구','광진구','동대문구','중랑구',
+  '성북구','강북구','도봉구','노원구','은평구','서대문구','마포구',
+  '양천구','강서구','구로구','금천구','영등포구','동작구','관악구',
+  '서초구','강남구','송파구','강동구'
+]
+
 const STORAGE_KEY = 'localhub-posts'
 const FAVORITES_KEY = 'localhub-favorites'
 
@@ -115,8 +177,21 @@ const router = useRouter()
 const posts = ref([])
 const post = ref(null)
 const favorites = ref([])
+const showEditPasswordPrompt = ref(false)
 const showEditForm = ref(false)
-const editForm = ref({ title: '', password: '', content: '' })
+const editPassword = ref('')
+const isEditVerified = ref(false)
+
+const editForm = ref({
+  title: '',
+  writer: '',
+  password: '',
+  region: '',
+  category: '자유게시판',
+  content: '',
+  image: '',
+  tagInput: ''
+})
 const commentWriter = ref('')
 const commentPassword = ref('')
 const commentText = ref('')
@@ -230,6 +305,10 @@ function cancelDeletePost() {
   deletePassword.value = ''
 }
 
+
+
+
+
 function confirmDeletePost(target) {
   if (!deletePassword.value.trim()) {
     alert('비밀번호를 입력해주세요.')
@@ -246,34 +325,87 @@ function confirmDeletePost(target) {
   router.push('/community')
 }
 
+
 function openEditForm() {
-  if (!showEditForm.value && post.value) {
-    editForm.value = {
-      title: post.value.title,
-      password: '',
-      content: post.value.content
-    }
-  }
-  showEditForm.value = !showEditForm.value
+  if (!post.value) return
+  editPassword.value = ''
+  showEditPasswordPrompt.value = true
+  showEditForm.value = false
+  isEditVerified.value = false
 }
 
-function submitEdit() {
-  if (!editForm.value.title.trim() || !editForm.value.password.trim() || !editForm.value.content.trim()) {
-    alert('제목, 비밀번호, 내용을 모두 입력해주세요.')
+function cancelEditProcess() {
+  showEditPasswordPrompt.value = false
+  showEditForm.value = false
+  editPassword.value = ''
+  isEditVerified.value = false
+}
+
+function verifyEditPassword() {
+  if (!editPassword.value.trim()) {
+    alert('비밀번호를 입력해주세요.')
     return
   }
 
-  if (!post.value || editForm.value.password !== post.value.password) {
+  if (!post.value || editPassword.value !== post.value.password) {
     alert('비밀번호가 일치하지 않습니다.')
     return
   }
+
+  isEditVerified.value = true
+  editForm.value = {
+    title: post.value.title,
+    writer: post.value.writer,
+    password: post.value.password,
+    region: post.value.region || '',
+    category: post.value.category || '자유게시판',
+    content: post.value.content,
+    image: post.value.image || '',
+    tagInput: (post.value.tags || []).join(', ')
+  }
+  showEditPasswordPrompt.value = false
+  showEditForm.value = true
+}
+
+function handleEditImageUpload(event) {
+  const file = event.target.files[0]
+  if (!file) return
+
+  const reader = new FileReader()
+  reader.onload = () => {
+    editForm.value.image = reader.result
+  }
+  reader.readAsDataURL(file)
+}
+
+function submitEdit() {
+  if (!editForm.value.title.trim() || !editForm.value.writer.trim() || !editForm.value.password.trim() || !editForm.value.content.trim()) {
+    alert('제목, 작성자, 비밀번호, 내용을 모두 입력해주세요.')
+    return
+  }
+
+  if (!isEditVerified.value) {
+    alert('비밀번호 확인이 필요합니다.')
+    return
+  }
+
+  const tags = editForm.value.tagInput
+    .split(',')
+    .map((tag) => tag.trim())
+    .filter(Boolean)
 
   posts.value = posts.value.map((item) =>
     item.id === post.value.id
       ? {
           ...item,
           title: editForm.value.title,
-          content: editForm.value.content
+          writer: editForm.value.writer,
+          password: editForm.value.password,
+          region: editForm.value.region,
+          category: editForm.value.category,
+          content: editForm.value.content,
+          image: editForm.value.image,
+          tags
         }
       : item
   )
@@ -281,7 +413,8 @@ function submitEdit() {
   post.value = posts.value.find((item) => item.id === post.value.id) || null
   savePosts()
   showEditForm.value = false
-  editForm.value = { title: '', password: '', content: '' }
+  isEditVerified.value = false
+  editPassword.value = ''
   alert('게시글이 수정되었습니다.')
 }
 
@@ -370,6 +503,12 @@ function saveCommentEdit(comment) {
   editingCommentId.value = null
   commentDraft.value = ''
   savePosts()
+}
+
+
+
+function removeEditImage() {
+  editForm.value.image = ''
 }
 
 onMounted(() => {
@@ -639,6 +778,99 @@ textarea:focus {
   border-radius: 10px;
   color: #888;
   font-weight: 600;
+}
+
+.write-form {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid #eee;
+  margin-bottom: 24px;
+}
+
+.form-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.flex-small {
+  flex: 1;
+  min-width: 0;
+}
+
+.flex-large {
+  flex: 2;
+}
+
+.write-form input,
+.write-form select,
+.write-form textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e3e3e3;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #333;
+  background: white;
+}
+
+.write-form input:focus,
+.write-form select:focus,
+.write-form textarea:focus {
+  outline: none;
+  border-color: #ff7a3d;
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.submit-btn {
+  border: none;
+  border-radius: 10px;
+  padding: 12px 22px;
+  background: linear-gradient(135deg, #ff7a3d 0%, #ff945f 100%);
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 12px 24px rgba(255, 122, 61, 0.18);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.submit-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 28px rgba(255, 122, 61, 0.24);
+}
+
+.cancel-btn {
+  border: 1px solid #ff7a3d;
+  background: #ffffff;
+  color: #ff7a3d;
+  border-radius: 10px;
+  padding: 12px 22px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.cancel-btn:hover {
+  background: #ff7a3d;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.preview-image {
+  width: 100%;
+  max-height: 220px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-top: 12px;
 }
 
 @media (max-width: 700px) {
