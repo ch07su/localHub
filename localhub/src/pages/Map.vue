@@ -107,59 +107,40 @@
       </div>
       
       <div class="horizontal-card-list" v-if="filteredList.length > 0">
-        <div 
-          v-for="f in filteredList" 
-          :key="f.contentid" 
-          class="horizontal-card"
-          @click="focusOnMap(f)"
-        >
-          <div class="card-img-area" :class="{ 'no-image': !f.firstimage }">
-=======
-          <!-- 🛠️ 우측 상단 버튼 영역 (즐겨찾기 및 스탬프 연동형 액션바) -->
-          <div class="card-action-buttons">
-            
-            <!-- 즐겨찾기 버튼 (⭐) -->
-            <button 
-              :class="['card-fav-btn', { 'favorited': isFavorited(f.contentid) }]"
-              @click.stop="toggleFavorite(f.contentid)"
-            >
-              {{ isFavorited(f.contentid) ? '★' : '☆' }}
-            </button>
-
-            <!-- 💮 스탬프 버튼과 상태 반응형 문구 -->
-            <div class="stamp-btn-wrapper">
-              <button 
-                :class="['card-stamp-btn', { 'stamped': isStamped(f.contentid) }]"
-                @click.stop="toggleStamp(f.contentid)"
+          <div
+            v-for="f in filteredList"
+            :key="f.contentid"
+            class="horizontal-card"
+            @click="focusOnMap(f)"
+          >
+            <div class="card-action-buttons">
+              <button
+                :class="['card-fav-btn', { 'favorited': isFavorited(f.contentid) }]"
+                @click.stop="toggleFavorite(f.contentid)"
               >
-                {{ isStamped(f.contentid) ? '💮' : '○' }}
+                {{ isFavorited(f.contentid) ? '★' : '☆' }}
               </button>
-              <span :class="['stamp-label', { 'stamped-active': isStamped(f.contentid) }]">
-                {{ isStamped(f.contentid) ? '다녀옴!' : '도장 찍기' }}
-              </span>
+
+              <div class="stamp-btn-wrapper">
+                <button
+                  :class="['card-stamp-btn', { 'stamped': isStamped(f.contentid) }]"
+                  @click.stop="toggleStamp(f.contentid)"
+                >
+                  {{ isStamped(f.contentid) ? '💮' : '○' }}
+                </button>
+                <span :class="['stamp-label', { 'stamped-active': isStamped(f.contentid) }]">
+                  {{ isStamped(f.contentid) ? '다녀옴!' : '도장 찍기' }}
+                </span>
+              </div>
             </div>
           </div>
-
-          <div class="card-img-area">
->>>>>>> e0bc83d6ae0d13fb07916692703ba56d42efba0d
-            <img
-              :src="f.firstimage || noImagePlaceholder"
-              alt="장소 이미지"
-              @error="event => event.target.src = noImagePlaceholder"
-            />
-          </div>
-
-          <div class="card-info-area">
-            <div class="card-title-row">
-              <h4 class="card-title">{{ f.title || '제목 없음' }}</h4>
-              <span :class="['category-badge', getCategoryClass(f)]">
-                {{ getCategoryNameOfItem(f) }}
-              </span>
+            <div class="card-img-area" :class="{ 'no-image': !f.firstimage }">
+              <img
+                :src="f.firstimage || noImagePlaceholder"
+                alt="장소 이미지"
+                @error="event => event.target.src = noImagePlaceholder"
+              />
             </div>
-            <p class="card-address">{{ f.addr1 || '주소 정보가 없습니다.' }}</p>
-            <p class="card-desc">{{ f.tel ? '📞 ' + f.tel : '상세 정보는 마커를 호버하여 확인하세요.' }}</p>
-          </div>
-        </div>
       </div>
 
       <div class="no-data" v-else>
@@ -317,16 +298,12 @@ const getCategoryClass = (item) => {
   return 'default-tag'
 }
 
-
-=======
-// 💮 스탬프 토글
 const toggleStamp = (contentid) => {
   const index = stampedIds.value.indexOf(contentid)
   if (index > -1) {
     stampedIds.value.splice(index, 1)
   } else {
     stampedIds.value.push(contentid)
->>>>>>> e0bc83d6ae0d13fb07916692703ba56d42efba0d
   }
   localStorage.setItem('seoul_stamped_places', JSON.stringify(stampedIds.value))
   updateMarkers()
@@ -1010,13 +987,6 @@ onMounted(() => {
   height: 100px;
   border-radius: 8px;
   overflow: hidden;
-<<<<<<< HEAD
-  background: #ffd59e;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  flex-shrink: 0;
 }
 
 .card-img-area.no-image {
