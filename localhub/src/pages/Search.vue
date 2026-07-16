@@ -333,67 +333,50 @@ function openPost(post) {
 
 .place-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
 }
 
+/* 카드 크기 축소, 경계와 그림자 완화 */
 .place-card {
   background: #fff;
-  border-radius: 24px;
+  border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: transform 0.16s, box-shadow 0.16s;
   display: flex;
   flex-direction: column;
+  align-items: stretch;
+  min-height: 110px;
 }
 
-.place-card:hover {
-  transform: translateY(-4px);
-}
+.place-card:hover { transform: translateY(-3px); }
 
+/* 이미지 영역 축소 */
 .card-img-area {
-  position: relative;
-  min-height: 180px;
+  min-height: 64px;
+  height: 64px;
   overflow: hidden;
+  background: #f7efe5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .card-img-area img {
   width: 100%;
-  height: 180px;
+  height: 64px;
   object-fit: cover;
   display: block;
 }
 
-.card-body {
-  padding: 18px 18px 20px;
-}
+/* 바디 패딩·폰트 축소 */
+.card-body { padding: 8px 10px; }
 
-.place-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: rgba(255, 122, 0, 0.1);
-  color: #ff7a00;
-  font-size: 12px;
-  font-weight: 700;
-  margin-bottom: 10px;
-}
-
-.place-title {
-  margin: 0 0 10px;
-  font-size: 18px;
-  line-height: 1.3;
-  color: #111;
-}
-
-.place-address {
-  margin: 0;
-  color: #666;
-  font-size: 13px;
-  line-height: 1.6;
-}
+.place-badge { padding: 4px 8px; font-size: 11px; margin-bottom: 6px; }
+.place-title { font-size: 13px; margin: 0 0 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.place-address { font-size: 11px; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .more-wrap {
   text-align: center;
@@ -487,7 +470,13 @@ function openPost(post) {
   border: 1px solid #f2d4a5;
   font-size: 14px;
 }
-
+@media (max-width: 1200px) {
+  .place-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+}
+@media (max-width: 480px) {
+  .place-grid { grid-template-columns: 1fr; }
+  .card-img-area, .card-img-area img { height: 96px; }
+}
 @media (max-width: 900px) {
   .place-grid {
     grid-template-columns: 1fr;

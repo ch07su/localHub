@@ -203,21 +203,46 @@ function buildPlaceOptions() {
 
 // 즐겨찾기 데이터 로드 함수 (localStorage 등에서 즐겨찾기 리스트를 가져온다고 가정)
 function loadFavorites() {
+  // 1) 기존 'favorites' 키 확인 (객체 배열 또는 id 배열일 수 있음)
   const savedFavorites = localStorage.getItem('favorites')
   if (savedFavorites) {
     try {
-      favorites.value = JSON.parse(savedFavorites)
+      const parsed = JSON.parse(savedFavorites)
+      // 이미 place 객체 배열이 저장된 경우
+      if (Array.isArray(parsed) && parsed.length && typeof parsed[0] === 'object') {
+        favorites.value = parsed
+        return
+      }
+      // id 배열인 경우 placeOptions에서 매핑
+      if (Array.isArray(parsed)) {
+        favorites.value = parsed
+          .map(id => placeOptions.value.find(p => p.id == id))
+          .filter(Boolean)
+        return
+      }
     } catch (e) {
-      console.error('즐겨찾기 데이터를 불러오는 데 실패했습니다.', e)
-      favorites.value = []
+      console.error('favorites 파싱 실패', e)
     }
-  } else {
-    // 만약 테스트용 데이터가 필요하다면 아래처럼 더미 데이터를 넣어둘 수 있습니다.
-    favorites.value = [
-      { id: 'fav-1', title: '경복궁', address: '서울특별시 종로구 사직로 161', mapx: 126.9770, mapy: 37.5796 },
-      { id: 'fav-2', title: 'N서울타워', address: '서울특별시 용산구 남산공원길 105', mapx: 126.9882, mapy: 37.5511 }
-    ]
   }
+
+  // 2) Map.vue가 사용하는 키인 'seoul_favorite_places' 확인
+  const savedSeoulFav = localStorage.getItem('seoul_favorite_places')
+  if (savedSeoulFav) {
+    try {
+      const ids = JSON.parse(savedSeoulFav)
+      if (Array.isArray(ids)) {
+        favorites.value = ids
+          .map(id => placeOptions.value.find(p => p.id == id))
+          .filter(Boolean)
+        return
+      }
+    } catch (e) {
+      console.error('seoul_favorite_places 파싱 실패', e)
+    }
+  }
+
+  // 3) 기본값: 빈 배열 (또는 테스트용 더미를 넣을 경우 여기에서 설정)
+  favorites.value = []
 }
 
 const searchResults = computed(() => {
@@ -455,6 +480,8 @@ onMounted(async () => {
   min-height: 100vh;
   color: #333;
 }
+
+/* ... (rest of the styles unchanged) ... */
 
 .route-main {
   max-width: 1200px;
